@@ -10,11 +10,11 @@
         :root {
             /* Apple Color Palette - Light Mode */
             --bg-base: #f5f5f7;
-            --surface-bg: rgba(255, 255, 255, 0.75);
+            --surface-bg: #ffffff;
             --surface-solid: #ffffff;
             --surface-border: rgba(0, 0, 0, 0.08);
             --surface-border-hover: rgba(0, 0, 0, 0.16);
-            --surface-highlight: rgba(255, 255, 255, 0.95);
+            --surface-highlight: #f0f0f2;
             
             --text-primary: #1d1d1f;
             --text-secondary: #86868b;
@@ -32,26 +32,26 @@
             --apple-red: #ff3b30;
             
             --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
-            --shadow-card-hover: 0 12px 32px -4px rgba(0, 0, 0, 0.09), 0 4px 10px -1px rgba(0, 0, 0, 0.05);
+            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+            --shadow-card-hover: 0 8px 28px -2px rgba(0, 0, 0, 0.08), 0 4px 10px -1px rgba(0, 0, 0, 0.04);
             --shadow-float: 0 16px 36px -6px rgba(0, 0, 0, 0.12);
             
             --radius-sm: 8px;
             --radius-md: 12px;
-            --radius-lg: 18px;
-            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
             --radius-pill: 9999px;
             
-            --blur-material: blur(24px) saturate(190%);
             --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         [data-theme="dark"] {
+            /* Apple Color Palette - Dark Mode */
             --bg-base: #000000;
-            --surface-bg: rgba(28, 28, 30, 0.78);
-            --surface-solid: #1c1c1e;
-            --surface-border: rgba(255, 255, 255, 0.12);
-            --surface-border-hover: rgba(255, 255, 255, 0.22);
+            --surface-bg: #1c1c1e;
+            --surface-solid: #2c2c2e;
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --surface-border-hover: rgba(255, 255, 255, 0.2);
             --surface-highlight: rgba(255, 255, 255, 0.08);
             
             --text-primary: #f5f5f7;
@@ -69,9 +69,9 @@
             --apple-purple-light: rgba(191, 90, 242, 0.18);
             --apple-red: #ff453a;
             
-            --shadow-subtle: 0 2px 10px rgba(0, 0, 0, 0.4);
-            --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
-            --shadow-card-hover: 0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 4px 10px -1px rgba(0, 0, 0, 0.4);
+            --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+            --shadow-card-hover: 0 8px 28px -2px rgba(0, 0, 0, 0.6);
             --shadow-float: 0 16px 40px -6px rgba(0, 0, 0, 0.75);
         }
 
@@ -80,6 +80,10 @@
             margin: 0;
             padding: 0;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
@@ -91,25 +95,27 @@
             display: flex;
             flex-direction: column;
             letter-spacing: -0.011em;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.25s ease, color 0.25s ease;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* Ambient Glow - Hardware Accelerated */
         .ambient-glow {
             position: fixed;
             top: 0;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate3d(-50%, 0, 0);
             width: 800px;
-            height: 380px;
+            height: 320px;
             background: radial-gradient(circle, var(--apple-blue-light) 0%, rgba(0,0,0,0) 70%);
-            opacity: 0.6;
+            opacity: 0.5;
             pointer-events: none;
             z-index: 0;
-            transition: opacity 0.5s ease;
+            will-change: transform;
         }
 
-        /* Header / Dynamic Bar */
+        /* Floating Sticky Header (Only element using backdrop-filter for optimal scroll fps) */
         header {
             position: sticky;
             top: 16px;
@@ -121,13 +127,18 @@
             align-items: center;
             justify-content: space-between;
             padding: 10px 18px;
-            background: var(--surface-bg);
-            backdrop-filter: var(--blur-material);
-            -webkit-backdrop-filter: var(--blur-material);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
             border: 1px solid var(--surface-border);
             border-radius: var(--radius-pill);
             box-shadow: var(--shadow-card);
-            transition: all 0.3s var(--spring-ease);
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        [data-theme="dark"] header {
+            background: rgba(28, 28, 30, 0.85);
         }
 
         .brand {
@@ -150,7 +161,7 @@
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            box-shadow: 0 4px 10px rgba(0, 113, 227, 0.3);
+            box-shadow: 0 4px 10px rgba(0, 113, 227, 0.25);
         }
 
         .header-actions {
@@ -173,14 +184,13 @@
             border-radius: var(--radius-pill);
             cursor: pointer;
             outline: none;
-            transition: all 0.18s var(--spring-ease);
+            transition: transform 0.15s var(--spring-ease), border-color 0.15s ease, background-color 0.15s ease;
             white-space: nowrap;
         }
 
         .pill-btn:hover {
             border-color: var(--surface-border-hover);
             transform: translateY(-1px);
-            box-shadow: var(--shadow-subtle);
         }
 
         .pill-btn:active {
@@ -199,7 +209,7 @@
             border: 1px solid var(--surface-border);
             color: var(--text-primary);
             cursor: pointer;
-            transition: all 0.18s var(--spring-ease);
+            transition: transform 0.15s var(--spring-ease), border-color 0.15s ease;
         }
 
         .icon-btn:hover {
@@ -211,7 +221,7 @@
             transform: scale(0.94);
         }
 
-        /* Main Container */
+        /* Main Workspace */
         main {
             position: relative;
             z-index: 1;
@@ -222,6 +232,7 @@
             display: grid;
             grid-template-columns: 1.15fr 0.85fr;
             gap: 20px;
+            contain: layout style;
         }
 
         @media (max-width: 960px) {
@@ -230,18 +241,16 @@
             }
         }
 
-        /* Frosted Glass Card Base */
+        /* Apple Surface Cards (Clean & High Performance) */
         .glass-card {
             background: var(--surface-bg);
-            backdrop-filter: var(--blur-material);
-            -webkit-backdrop-filter: var(--blur-material);
             border: 1px solid var(--surface-border);
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-card);
             padding: 22px;
             display: flex;
             flex-direction: column;
-            transition: all 0.25s var(--spring-ease);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .glass-card:hover {
@@ -290,16 +299,16 @@
             font-size: 1.05rem;
             line-height: 1.68;
             color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.45);
+            background: rgba(0, 0, 0, 0.02);
             border: 1px solid var(--surface-border);
             border-radius: var(--radius-lg);
             outline: none;
             resize: vertical;
-            transition: all 0.2s ease;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
         }
 
         [data-theme="dark"] .main-textarea {
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.35);
         }
 
         .main-textarea:focus {
@@ -312,14 +321,13 @@
             color: var(--text-tertiary);
         }
 
-        /* Drag & Drop Area Overlay */
+        /* Drag & Drop Hint Overlay */
         .drop-hint {
             position: absolute;
             inset: 0;
             border-radius: var(--radius-lg);
             border: 2px dashed var(--apple-blue);
             background: var(--apple-blue-light);
-            backdrop-filter: blur(10px);
             display: none;
             flex-direction: column;
             align-items: center;
@@ -360,21 +368,20 @@
             border-radius: var(--radius-sm);
             cursor: pointer;
             outline: none;
-            transition: all 0.16s var(--spring-ease);
+            transition: transform 0.12s var(--spring-ease), color 0.12s ease, border-color 0.12s ease;
             user-select: none;
         }
 
         .tool-chip:hover {
             color: var(--text-primary);
             border-color: var(--surface-border-hover);
-            background: var(--surface-solid);
         }
 
         .tool-chip:active {
             transform: scale(0.95);
         }
 
-        /* Metrics Sidebar / Dashboard */
+        /* Metrics Sidebar */
         .metrics-sidebar {
             display: flex;
             flex-direction: column;
@@ -384,13 +391,11 @@
         /* Hero Bento Card */
         .hero-metric-card {
             background: var(--surface-bg);
-            backdrop-filter: var(--blur-material);
-            -webkit-backdrop-filter: var(--blur-material);
             border: 1px solid var(--surface-border);
             border-radius: var(--radius-xl);
             padding: 22px 24px;
             box-shadow: var(--shadow-card);
-            transition: all 0.25s var(--spring-ease);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .hero-metric-card:hover {
@@ -444,7 +449,7 @@
             font-feature-settings: "tnum";
         }
 
-        /* Bento Grid for Metrics */
+        /* Bento Grid */
         .bento-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -453,13 +458,11 @@
 
         .bento-card {
             background: var(--surface-bg);
-            backdrop-filter: var(--blur-material);
-            -webkit-backdrop-filter: var(--blur-material);
             border: 1px solid var(--surface-border);
             border-radius: var(--radius-lg);
             padding: 16px;
             box-shadow: var(--shadow-subtle);
-            transition: all 0.2s var(--spring-ease);
+            transition: transform 0.18s var(--spring-ease), border-color 0.18s ease;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -468,7 +471,6 @@
         .bento-card:hover {
             transform: translateY(-2px);
             border-color: var(--surface-border-hover);
-            box-shadow: var(--shadow-card);
         }
 
         .bento-header {
@@ -504,14 +506,13 @@
         /* Time Estimates Card */
         .time-card {
             background: var(--surface-bg);
-            backdrop-filter: var(--blur-material);
-            -webkit-backdrop-filter: var(--blur-material);
             border: 1px solid var(--surface-border);
             border-radius: var(--radius-lg);
             padding: 16px 20px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
+            box-shadow: var(--shadow-subtle);
         }
 
         .time-col {
@@ -541,14 +542,13 @@
             color: var(--text-tertiary);
         }
 
-        /* Content Distribution Progress Bar */
+        /* Content Density Progress Card */
         .density-card {
             background: var(--surface-bg);
-            backdrop-filter: var(--blur-material);
-            -webkit-backdrop-filter: var(--blur-material);
             border: 1px solid var(--surface-border);
             border-radius: var(--radius-lg);
             padding: 16px 20px;
+            box-shadow: var(--shadow-subtle);
         }
 
         .density-header {
@@ -572,7 +572,7 @@
 
         .progress-segment {
             height: 100%;
-            transition: width 0.3s var(--spring-ease);
+            transition: width 0.25s var(--spring-ease);
         }
 
         .progress-chinese { background: var(--apple-blue); }
@@ -605,7 +605,7 @@
             position: fixed;
             bottom: 30px;
             left: 50%;
-            transform: translateX(-50%) translateY(100px);
+            transform: translate3d(-50%, 100px, 0);
             opacity: 0;
             background: var(--text-primary);
             color: var(--bg-base);
@@ -619,11 +619,12 @@
             box-shadow: var(--shadow-float);
             z-index: 1000;
             pointer-events: none;
-            transition: all 0.35s var(--spring-ease);
+            transition: transform 0.3s var(--spring-ease), opacity 0.3s ease;
+            will-change: transform, opacity;
         }
 
         .toast-pill.show {
-            transform: translateX(-50%) translateY(0);
+            transform: translate3d(-50%, 0, 0);
             opacity: 1;
         }
 
@@ -655,7 +656,7 @@
 <body>
     <div class="ambient-glow"></div>
 
-    <!-- Apple Dynamic Island Header -->
+    <!-- Apple Dynamic Header -->
     <header>
         <a href="#" class="brand">
             <div class="brand-icon">
@@ -989,37 +990,39 @@
             }, 2200);
         }
 
-        // Live Render Function
+        // Live Render Function (Scheduled with requestAnimationFrame for 120fps smoothness)
+        let rafId = null;
         function renderStatistics() {
-            const text = textInput.value;
-            const stats = analyzeText(text);
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                const text = textInput.value;
+                const stats = analyzeText(text);
+                const formatNum = num => num.toLocaleString();
 
-            const formatNum = num => num.toLocaleString();
+                statTotalWords.textContent = formatNum(stats.chineseCount + stats.englishWordCount);
+                statCharsWithSpace.textContent = formatNum(stats.totalCharsWithSpaces);
+                statCharsNoSpace.textContent = formatNum(stats.totalCharsWithoutSpaces);
+                statChinese.textContent = formatNum(stats.chineseCount);
+                statEnglish.textContent = formatNum(stats.englishWordCount);
+                statNumbers.textContent = formatNum(stats.numberCount);
+                statPunctuation.textContent = formatNum(stats.punctuationCount);
+                statParagraphs.textContent = formatNum(stats.paragraphCount);
+                statLines.textContent = formatNum(stats.lineCount);
+                statReadTime.textContent = stats.readingTimeDisplay;
+                statSpeechTime.textContent = stats.speakingTimeDisplay;
 
-            statTotalWords.textContent = formatNum(stats.chineseCount + stats.englishWordCount);
-            statCharsWithSpace.textContent = formatNum(stats.totalCharsWithSpaces);
-            statCharsNoSpace.textContent = formatNum(stats.totalCharsWithoutSpaces);
-            statChinese.textContent = formatNum(stats.chineseCount);
-            statEnglish.textContent = formatNum(stats.englishWordCount);
-            statNumbers.textContent = formatNum(stats.numberCount);
-            statPunctuation.textContent = formatNum(stats.punctuationCount);
-            statParagraphs.textContent = formatNum(stats.paragraphCount);
-            statLines.textContent = formatNum(stats.lineCount);
-            statReadTime.textContent = stats.readingTimeDisplay;
-            statSpeechTime.textContent = stats.speakingTimeDisplay;
+                const d = stats.densityStats;
+                barChinese.style.width = `${d.chinesePercent}%`;
+                barEnglish.style.width = `${d.englishPercent}%`;
+                barNumber.style.width = `${d.numberPercent}%`;
+                barOther.style.width = `${d.otherPercent}%`;
 
-            // Update Progress Bar
-            const d = stats.densityStats;
-            barChinese.style.width = `${d.chinesePercent}%`;
-            barEnglish.style.width = `${d.englishPercent}%`;
-            barNumber.style.width = `${d.numberPercent}%`;
-            barOther.style.width = `${d.otherPercent}%`;
-
-            legendChinese.textContent = `${d.chinesePercent}%`;
-            legendEnglish.textContent = `${d.englishPercent}%`;
-            legendNumber.textContent = `${d.numberPercent}%`;
-            legendOther.textContent = `${d.otherPercent}%`;
-            densityTotalRatio.textContent = text.length > 0 ? '100%' : '0%';
+                legendChinese.textContent = `${d.chinesePercent}%`;
+                legendEnglish.textContent = `${d.englishPercent}%`;
+                legendNumber.textContent = `${d.numberPercent}%`;
+                legendOther.textContent = `${d.otherPercent}%`;
+                densityTotalRatio.textContent = text.length > 0 ? '100%' : '0%';
+            });
         }
 
         textInput.addEventListener('input', renderStatistics);
