@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>WordCount · 在线字数统计工具 (Apple Design)</title>
+    <meta name="description" content="基于 Apple Design 语言的高性能在线实时字数统计工具，支持中文字数、英文单词、字符、标点、段落统计与阅读时长预估。100% 本地纯前端处理，隐私安全。">
+    <meta name="theme-color" content="#f5f5f7" id="theme-meta-color">
+    <style>
+        :root {
+            /* Apple Color Palette - Light Mode */
+            --bg-base: #f5f5f7;
+            --surface-bg: rgba(255, 255, 255, 0.75);
+            --surface-solid: #ffffff;
+            --surface-border: rgba(0, 0, 0, 0.08);
+            --surface-border-hover: rgba(0, 0, 0, 0.16);
+            --surface-highlight: rgba(255, 255, 255, 0.95);
+            
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --text-tertiary: #a1a1a6;
+            
+            --apple-blue: #0071e3;
+            --apple-blue-hover: #0077ed;
+            --apple-blue-light: rgba(0, 113, 227, 0.1);
+            --apple-green: #34c759;
+            --apple-green-light: rgba(52, 199, 89, 0.12);
+            --apple-orange: #ff9500;
+            --apple-orange-light: rgba(255, 149, 0, 0.12);
+            --apple-purple: #af52de;
+            --apple-purple-light: rgba(175, 82, 222, 0.12);
+            --apple-red: #ff3b30;
+            
+            --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+            --shadow-card-hover: 0 12px 32px -4px rgba(0, 0, 0, 0.09), 0 4px 10px -1px rgba(0, 0, 0, 0.05);
+            --shadow-float: 0 16px 36px -6px rgba(0, 0, 0, 0.12);
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-xl: 24px;
+            --radius-pill: 9999px;
+            
+            --blur-material: blur(24px) saturate(190%);
+            --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg-base: #000000;
+            --surface-bg: rgba(28, 28, 30, 0.78);
+            --surface-solid: #1c1c1e;
+            --surface-border: rgba(255, 255, 255, 0.12);
+            --surface-border-hover: rgba(255, 255, 255, 0.22);
+            --surface-highlight: rgba(255, 255, 255, 0.08);
+            
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #6e6e73;
+            
+            --apple-blue: #0a84ff;
+            --apple-blue-hover: #409cff;
+            --apple-blue-light: rgba(10, 132, 255, 0.18);
+            --apple-green: #30d158;
+            --apple-green-light: rgba(48, 209, 88, 0.18);
+            --apple-orange: #ff9f0a;
+            --apple-orange-light: rgba(255, 159, 10, 0.18);
+            --apple-purple: #bf5af2;
+            --apple-purple-light: rgba(191, 90, 242, 0.18);
+            --apple-red: #ff453a;
+            
+            --shadow-subtle: 0 2px 10px rgba(0, 0, 0, 0.4);
+            --shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-card-hover: 0 12px 32px -4px rgba(0, 0, 0, 0.65), 0 4px 10px -1px rgba(0, 0, 0, 0.4);
+            --shadow-float: 0 16px 40px -6px rgba(0, 0, 0, 0.75);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            letter-spacing: -0.011em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 380px;
+            background: radial-gradient(circle, var(--apple-blue-light) 0%, rgba(0,0,0,0) 70%);
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Header / Dynamic Bar */
+        header {
+            position: sticky;
+            top: 16px;
+            z-index: 100;
+            width: calc(100% - 32px);
+            max-width: 1240px;
+            margin: 16px auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 18px;
+            background: var(--surface-bg);
+            backdrop-filter: var(--blur-material);
+            -webkit-backdrop-filter: var(--blur-material);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-pill);
+            box-shadow: var(--shadow-card);
+            transition: all 0.3s var(--spring-ease);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.05rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, var(--apple-blue), #5ac8fa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(0, 113, 227, 0.3);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 34px;
+            padding: 0 14px;
+            font-size: 0.86rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.18s var(--spring-ease);
+            white-space: nowrap;
+        }
+
+        .pill-btn:hover {
+            border-color: var(--surface-border-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .pill-btn:active {
+            transform: scale(0.96);
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-pill);
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.18s var(--spring-ease);
+        }
+
+        .icon-btn:hover {
+            border-color: var(--surface-border-hover);
+            transform: translateY(-1px);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.94);
+        }
+
+        /* Main Container */
+        main {
+            position: relative;
+            z-index: 1;
+            width: calc(100% - 32px);
+            max-width: 1240px;
+            margin: 0 auto 40px;
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 960px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Frosted Glass Card Base */
+        .glass-card {
+            background: var(--surface-bg);
+            backdrop-filter: var(--blur-material);
+            -webkit-backdrop-filter: var(--blur-material);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-card);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s var(--spring-ease);
+        }
+
+        .glass-card:hover {
+            border-color: var(--surface-border-hover);
+            box-shadow: var(--shadow-card-hover);
+        }
+
+        /* Editor Section */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 520px;
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .editor-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .textarea-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-textarea {
+            flex: 1;
+            width: 100%;
+            min-height: 380px;
+            padding: 16px;
+            font-family: inherit;
+            font-size: 1.05rem;
+            line-height: 1.68;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            outline: none;
+            resize: vertical;
+            transition: all 0.2s ease;
+        }
+
+        [data-theme="dark"] .main-textarea {
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .main-textarea:focus {
+            border-color: var(--apple-blue);
+            box-shadow: 0 0 0 3px var(--apple-blue-light);
+            background: var(--surface-solid);
+        }
+
+        .main-textarea::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        /* Drag & Drop Area Overlay */
+        .drop-hint {
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--apple-blue);
+            background: var(--apple-blue-light);
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: var(--apple-blue);
+            font-weight: 600;
+            font-size: 1.1rem;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .textarea-wrapper.dragover .drop-hint {
+            display: flex;
+        }
+
+        /* Tools Toolbar */
+        .tools-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--surface-border);
+        }
+
+        .tool-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            height: 30px;
+            padding: 0 10px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.16s var(--spring-ease);
+            user-select: none;
+        }
+
+        .tool-chip:hover {
+            color: var(--text-primary);
+            border-color: var(--surface-border-hover);
+            background: var(--surface-solid);
+        }
+
+        .tool-chip:active {
+            transform: scale(0.95);
+        }
+
+        /* Metrics Sidebar / Dashboard */
+        .metrics-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Hero Bento Card */
+        .hero-metric-card {
+            background: linear-gradient(135deg, var(--surface-bg), var(--surface-solid));
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-xl);
+            padding: 22px 24px;
+            box-shadow: var(--shadow-card);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-metric-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, var(--apple-blue-light) 0%, rgba(0,0,0,0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .hero-label {
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .hero-num-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin: 6px 0 12px;
+        }
+
+        .hero-number {
+            font-size: 3.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.04em;
+            line-height: 1;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hero-unit {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .hero-substats {
+            display: flex;
+            gap: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--surface-border);
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        .substat-item strong {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-feature-settings: "tnum";
+        }
+
+        /* Bento Grid for Metrics */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .bento-card {
+            background: var(--surface-bg);
+            backdrop-filter: var(--blur-material);
+            -webkit-backdrop-filter: var(--blur-material);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-subtle);
+            transition: all 0.2s var(--spring-ease);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .bento-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--surface-border-hover);
+            box-shadow: var(--shadow-card);
+        }
+
+        .bento-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        .bento-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .bento-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+            margin-top: 6px;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Time Estimates Card */
+        .time-card {
+            background: var(--surface-bg);
+            backdrop-filter: var(--blur-material);
+            -webkit-backdrop-filter: var(--blur-material);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .time-col {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .time-col-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .time-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .time-hint {
+            font-size: 0.72rem;
+            color: var(--text-tertiary);
+        }
+
+        /* Content Distribution Progress Bar */
+        .density-card {
+            background: var(--surface-bg);
+            backdrop-filter: var(--blur-material);
+            -webkit-backdrop-filter: var(--blur-material);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            padding: 16px 20px;
+        }
+
+        .density-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-track {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--surface-border);
+            overflow: hidden;
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .progress-segment {
+            height: 100%;
+            transition: width 0.3s var(--spring-ease);
+        }
+
+        .progress-chinese { background: var(--apple-blue); }
+        .progress-english { background: var(--apple-green); }
+        .progress-number { background: var(--apple-orange); }
+        .progress-other { background: var(--apple-purple); }
+
+        .density-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Toast Notification */
+        .toast-pill {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            opacity: 0;
+            background: var(--text-primary);
+            color: var(--bg-base);
+            padding: 10px 20px;
+            border-radius: var(--radius-pill);
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-float);
+            z-index: 1000;
+            pointer-events: none;
+            transition: all 0.35s var(--spring-ease);
+        }
+
+        .toast-pill.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            max-width: 1240px;
+            margin: 0 auto 24px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        svg {
+            display: inline-block;
+            vertical-align: middle;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+
+    <!-- Apple Dynamic Island Header -->
+    <header>
+        <a href="#" class="brand">
+            <div class="brand-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <span>WordCount</span>
+        </a>
+
+        <div class="header-actions">
+            <button class="pill-btn" id="btn-sample">
+                <svg width="14" height="14" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <span>示例范文</span>
+            </button>
+            <button class="pill-btn" id="btn-upload">
+                <svg width="14" height="14" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span>导入文件</span>
+            </button>
+            <input type="file" id="file-input" accept=".txt,.md,.json,.js,.py,.html,.css,.csv">
+            <button class="icon-btn" id="btn-theme-toggle" title="切换浅色/深色主题" aria-label="Toggle Theme">
+                <svg width="16" height="16" viewBox="0 0 24 24" id="theme-icon">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main>
+        <!-- Left: Text Editor Section -->
+        <section class="glass-card editor-container">
+            <div class="editor-header">
+                <div class="editor-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    <span>输入文本或拖入文件</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="pill-btn" id="btn-copy" title="复制文本">
+                        <svg width="13" height="13" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span>复制</span>
+                    </button>
+                    <button class="pill-btn" id="btn-clear" style="color: var(--apple-red);" title="清空所有内容">
+                        <svg width="13" height="13" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <span>清空</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="textarea-wrapper" id="textarea-container">
+                <textarea class="main-textarea" id="text-input" placeholder="在此处键入或粘贴文章内容，也可以直接将 .txt / .md 文件拖放至此处..." autofocus></textarea>
+                <div class="drop-hint">
+                    <svg width="40" height="40" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>释放鼠标以导入文档内容</span>
+                </div>
+            </div>
+
+            <!-- Action Pills Toolbar -->
+            <div class="tools-toolbar">
+                <button class="tool-chip" id="tool-trim">✂️ 首尾除空</button>
+                <button class="tool-chip" id="tool-compress-lines">🧹 清理多余空行</button>
+                <button class="tool-chip" id="tool-remove-spaces">🚫 去除所有空格</button>
+                <button class="tool-chip" id="tool-uppercase">🔠 转为大写</button>
+                <button class="tool-chip" id="tool-lowercase">🔡 转为小写</button>
+                <button class="tool-chip" id="tool-titlecase">🔤 词首大写</button>
+                <button class="tool-chip" id="tool-halfwidth">🔄 全角转半角</button>
+                <button class="tool-chip" id="tool-export-report">📊 导出统计清单</button>
+            </div>
+        </section>
+
+        <!-- Right: Metrics Dashboard -->
+        <aside class="metrics-sidebar">
+            <!-- Hero Stats Bento -->
+            <div class="hero-metric-card">
+                <div class="hero-label">总字数 (中文字 + 英文单词)</div>
+                <div class="hero-num-wrapper">
+                    <div class="hero-number" id="stat-total-words">0</div>
+                    <div class="hero-unit">字/词</div>
+                </div>
+                <div class="hero-substats">
+                    <div class="substat-item">总字符(计空格): <strong id="stat-chars-with-space">0</strong></div>
+                    <div class="substat-item">不计空格: <strong id="stat-chars-no-space">0</strong></div>
+                </div>
+            </div>
+
+            <!-- Bento Sub-Metrics Grid -->
+            <div class="bento-grid">
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <span>中文字数</span>
+                        <div class="bento-icon" style="background: var(--apple-blue-light); color: var(--apple-blue);">汉</div>
+                    </div>
+                    <div class="bento-number" id="stat-chinese">0</div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <span>英文单词</span>
+                        <div class="bento-icon" style="background: var(--apple-green-light); color: var(--apple-green);">En</div>
+                    </div>
+                    <div class="bento-number" id="stat-english">0</div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <span>数字计数</span>
+                        <div class="bento-icon" style="background: var(--apple-orange-light); color: var(--apple-orange);">123</div>
+                    </div>
+                    <div class="bento-number" id="stat-numbers">0</div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <span>标点符号</span>
+                        <div class="bento-icon" style="background: var(--apple-purple-light); color: var(--apple-purple);">，.</div>
+                    </div>
+                    <div class="bento-number" id="stat-punctuation">0</div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <span>有效段落</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24"><line x1="21" y1="10" x2="3" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="3" y2="18"></line></svg>
+                    </div>
+                    <div class="bento-number" id="stat-paragraphs">0</div>
+                </div>
+
+                <div class="bento-card">
+                    <div class="bento-header">
+                        <span>物理行数</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    </div>
+                    <div class="bento-number" id="stat-lines">0</div>
+                </div>
+            </div>
+
+            <!-- Time Estimates Card -->
+            <div class="time-card">
+                <div class="time-col">
+                    <div class="time-col-header">
+                        <svg width="14" height="14" viewBox="0 0 24 24" style="color: var(--apple-green);"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <span>预计阅读耗时</span>
+                    </div>
+                    <div class="time-value" id="stat-read-time">0 秒</div>
+                    <div class="time-hint">按 400字/分 静音速读</div>
+                </div>
+                <div class="time-col">
+                    <div class="time-col-header">
+                        <svg width="14" height="14" viewBox="0 0 24 24" style="color: var(--apple-orange);"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        <span>演讲演说耗时</span>
+                    </div>
+                    <div class="time-value" id="stat-speech-time">0 秒</div>
+                    <div class="time-hint">按 150字/分 朗读演说</div>
+                </div>
+            </div>
+
+            <!-- Content Density Distribution -->
+            <div class="density-card">
+                <div class="density-header">
+                    <span>文本组成分布</span>
+                    <span id="density-total-ratio">0%</span>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-segment progress-chinese" id="bar-chinese" style="width: 0%;"></div>
+                    <div class="progress-segment progress-english" id="bar-english" style="width: 0%;"></div>
+                    <div class="progress-segment progress-number" id="bar-number" style="width: 0%;"></div>
+                    <div class="progress-segment progress-other" id="bar-other" style="width: 0%;"></div>
+                </div>
+                <div class="density-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--apple-blue);"></div>中文 <span id="legend-chinese">0%</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--apple-green);"></div>英文 <span id="legend-english">0%</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--apple-orange);"></div>数字 <span id="legend-number">0%</span></div>
+                    <div class="legend-item"><div class="legend-dot" style="background: var(--apple-purple);"></div>标点/符号 <span id="legend-other">0%</span></div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast-pill" id="toast">
+        <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span id="toast-message">操作成功</span>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>100% 客户端本地计算 · 零网络传输 · 保护隐私 · Apple Design</p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        function analyzeText(text) {
+            if (!text || typeof text !== 'string') {
+                return {
+                    chineseCount: 0,
+                    englishWordCount: 0,
+                    digitCount: 0,
+                    numberCount: 0,
+                    punctuationCount: 0,
+                    whitespaceCount: 0,
+                    totalCharsWithSpaces: 0,
+                    totalCharsWithoutSpaces: 0,
+                    lineCount: 0,
+                    paragraphCount: 0,
+                    readingTimeDisplay: '0 秒',
+                    speakingTimeDisplay: '0 秒',
+                    densityStats: { chinesePercent: 0, englishPercent: 0, numberPercent: 0, otherPercent: 0 }
+                };
+            }
+
+            const totalCharsWithSpaces = text.length;
+            const totalCharsWithoutSpaces = text.replace(/\s/g, '').length;
+
+            const chineseMatches = text.match(/[\u4e00-\u9fa5\u3400-\u4dbf\uf900-\ufaff]/g) || [];
+            const chineseCount = chineseMatches.length;
+
+            const englishWordMatches = text.match(/[a-zA-Z]+(?:['’_\-][a-zA-Z]+)*/g) || [];
+            const englishWordCount = englishWordMatches.length;
+
+            const numberMatches = text.match(/\d+(?:\.\d+)?/g) || [];
+            const numberCount = numberMatches.length;
+            const digitMatches = text.match(/\d/g) || [];
+            const digitCount = digitMatches.length;
+
+            const punctuationMatches = text.match(/[\u3000-\u303F\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\u2000-\u206F\u2E00-\u2E7F!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g) || [];
+            const punctuationCount = punctuationMatches.length;
+
+            const whitespaceMatches = text.match(/\s/g) || [];
+            const whitespaceCount = whitespaceMatches.length;
+
+            const physicalLines = text.split(/\r\n|\r|\n/);
+            const lineCount = totalCharsWithSpaces === 0 ? 0 : physicalLines.length;
+            const nonBlankParagraphs = physicalLines.filter(line => line.trim().length > 0);
+            const paragraphCount = nonBlankParagraphs.length;
+
+            const readMinutes = (chineseCount / 400) + (englishWordCount / 200) + (digitCount / 300);
+            const speechMinutes = (chineseCount + englishWordCount + digitCount) / 150;
+
+            function formatTime(minutes) {
+                if (minutes <= 0) return '0 秒';
+                const totalSecs = Math.ceil(minutes * 60);
+                if (totalSecs < 60) return `${totalSecs} 秒`;
+                const mins = Math.floor(totalSecs / 60);
+                const secs = totalSecs % 60;
+                return secs > 0 ? `${mins} 分 ${secs} 秒` : `${mins} 分钟`;
+            }
+
+            const totalItems = chineseCount + digitCount + englishWordMatches.join('').length + punctuationCount;
+            let chinesePercent = 0, englishPercent = 0, numberPercent = 0, otherPercent = 0;
+            if (totalItems > 0) {
+                chinesePercent = Math.round((chineseCount / totalItems) * 100);
+                englishPercent = Math.round((englishWordMatches.join('').length / totalItems) * 100);
+                numberPercent = Math.round((digitCount / totalItems) * 100);
+                otherPercent = Math.max(0, 100 - chinesePercent - englishPercent - numberPercent);
+            }
+
+            return {
+                chineseCount,
+                englishWordCount,
+                digitCount,
+                numberCount,
+                punctuationCount,
+                whitespaceCount,
+                totalCharsWithSpaces,
+                totalCharsWithoutSpaces,
+                lineCount,
+                paragraphCount,
+                readingTimeDisplay: formatTime(readMinutes),
+                speakingTimeDisplay: formatTime(speechMinutes),
+                densityStats: { chinesePercent, englishPercent, numberPercent, otherPercent }
+            };
+        }
+
+        // DOM Elements
+        const textInput = document.getElementById('text-input');
+        const statTotalWords = document.getElementById('stat-total-words');
+        const statCharsWithSpace = document.getElementById('stat-chars-with-space');
+        const statCharsNoSpace = document.getElementById('stat-chars-no-space');
+        const statChinese = document.getElementById('stat-chinese');
+        const statEnglish = document.getElementById('stat-english');
+        const statNumbers = document.getElementById('stat-numbers');
+        const statPunctuation = document.getElementById('stat-punctuation');
+        const statParagraphs = document.getElementById('stat-paragraphs');
+        const statLines = document.getElementById('stat-lines');
+        const statReadTime = document.getElementById('stat-read-time');
+        const statSpeechTime = document.getElementById('stat-speech-time');
+
+        // Progress Bar Elements
+        const barChinese = document.getElementById('bar-chinese');
+        const barEnglish = document.getElementById('bar-english');
+        const barNumber = document.getElementById('bar-number');
+        const barOther = document.getElementById('bar-other');
+        const legendChinese = document.getElementById('legend-chinese');
+        const legendEnglish = document.getElementById('legend-english');
+        const legendNumber = document.getElementById('legend-number');
+        const legendOther = document.getElementById('legend-other');
+        const densityTotalRatio = document.getElementById('density-total-ratio');
+
+        // Buttons
+        const btnClear = document.getElementById('btn-clear');
+        const btnCopy = document.getElementById('btn-copy');
+        const btnSample = document.getElementById('btn-sample');
+        const btnUpload = document.getElementById('btn-upload');
+        const fileInput = document.getElementById('file-input');
+        const btnThemeToggle = document.getElementById('btn-theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const textareaContainer = document.getElementById('textarea-container');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-message');
+
+        // Toast Helper
+        let toastTimer = null;
+        function showToast(message) {
+            toastMsg.textContent = message;
+            toast.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2200);
+        }
+
+        // Live Render Function
+        function renderStatistics() {
+            const text = textInput.value;
+            const stats = analyzeText(text);
+
+            const formatNum = num => num.toLocaleString();
+
+            statTotalWords.textContent = formatNum(stats.chineseCount + stats.englishWordCount);
+            statCharsWithSpace.textContent = formatNum(stats.totalCharsWithSpaces);
+            statCharsNoSpace.textContent = formatNum(stats.totalCharsWithoutSpaces);
+            statChinese.textContent = formatNum(stats.chineseCount);
+            statEnglish.textContent = formatNum(stats.englishWordCount);
+            statNumbers.textContent = formatNum(stats.numberCount);
+            statPunctuation.textContent = formatNum(stats.punctuationCount);
+            statParagraphs.textContent = formatNum(stats.paragraphCount);
+            statLines.textContent = formatNum(stats.lineCount);
+            statReadTime.textContent = stats.readingTimeDisplay;
+            statSpeechTime.textContent = stats.speakingTimeDisplay;
+
+            // Update Progress Bar
+            const d = stats.densityStats;
+            barChinese.style.width = `${d.chinesePercent}%`;
+            barEnglish.style.width = `${d.englishPercent}%`;
+            barNumber.style.width = `${d.numberPercent}%`;
+            barOther.style.width = `${d.otherPercent}%`;
+
+            legendChinese.textContent = `${d.chinesePercent}%`;
+            legendEnglish.textContent = `${d.englishPercent}%`;
+            legendNumber.textContent = `${d.numberPercent}%`;
+            legendOther.textContent = `${d.otherPercent}%`;
+            densityTotalRatio.textContent = text.length > 0 ? '100%' : '0%';
+        }
+
+        textInput.addEventListener('input', renderStatistics);
+
+        const SAMPLE_TEXT = `设计之道：致敬 Apple 经典设计美学
+
+Apple 的设计哲学在于消除复杂，让工具成为思考与创造的自然延伸。正如史蒂夫·乔布斯（Steve Jobs）所言：“Design is not just what it looks like and feels like. Design is how it works.”
+
+在现代人机交互设计中，磨砂玻璃（Frosted Glass / Materials）、精密的弹性物理动效（Fluid Spring Transitions）、细腻的排版层级（Typography Tracking）以及自适应的明暗色彩模式，共同构筑了触手可及的愉悦体验。
+
+本款字数统计工具支持中英文混合精细分词、字数分析、阅读时长计算（约 400 字/分钟）与演讲耗时预估。数据 100% 保持在本地浏览器运算，毫秒级响应，安全可靠！`;
+
+        btnSample.addEventListener('click', () => {
+            textInput.value = SAMPLE_TEXT;
+            renderStatistics();
+            showToast('已加载 Apple 设计美学范文');
+        });
+
+        // Copy Text
+        btnCopy.addEventListener('click', async () => {
+            if (!textInput.value) {
+                showToast('输入框内暂无文本');
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(textInput.value);
+                showToast('已成功复制全部文本');
+            } catch (err) {
+                textInput.select();
+                document.execCommand('copy');
+                showToast('已复制到剪贴板');
+            }
+        });
+
+        // Clear Text
+        btnClear.addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = '';
+            renderStatistics();
+            showToast('已清空内容');
+        });
+
+        // Tool: Trim Spaces
+        document.getElementById('tool-trim').addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = textInput.value.trim();
+            renderStatistics();
+            showToast('已去除首尾空格');
+        });
+
+        // Tool: Clean Extra Blank Lines
+        document.getElementById('tool-compress-lines').addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = textInput.value.replace(/\n\s*\n+/g, '\n\n').trim();
+            renderStatistics();
+            showToast('已压缩多余连续空行');
+        });
+
+        // Tool: Remove All Spaces
+        document.getElementById('tool-remove-spaces').addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = textInput.value.replace(/\s+/g, '');
+            renderStatistics();
+            showToast('已去除全部空白字符');
+        });
+
+        // Tool: Uppercase
+        document.getElementById('tool-uppercase').addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = textInput.value.toUpperCase();
+            renderStatistics();
+            showToast('已转换为全部大写');
+        });
+
+        // Tool: Lowercase
+        document.getElementById('tool-lowercase').addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = textInput.value.toLowerCase();
+            renderStatistics();
+            showToast('已转换为全部小写');
+        });
+
+        // Tool: Title Case
+        document.getElementById('tool-titlecase').addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = textInput.value.replace(/\b[a-zA-Z]/g, match => match.toUpperCase());
+            renderStatistics();
+            showToast('已转换为词首字母大写');
+        });
+
+        // Tool: Fullwidth to Halfwidth
+        document.getElementById('tool-halfwidth').addEventListener('click', () => {
+            if (!textInput.value) return;
+            textInput.value = textInput.value.replace(/[\uff01-\uff5e]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xfee0)).replace(/\u3000/g, ' ');
+            renderStatistics();
+            showToast('全角字符已转为半角');
+        });
+
+        // Tool: Export Report
+        document.getElementById('tool-export-report').addEventListener('click', () => {
+            const stats = analyzeText(textInput.value);
+            const report = `======================================
+         字数统计分析报告 (WordCount)
+======================================
+生成时间：${new Date().toLocaleString()}
+
+【核心数据】
+- 总字数 (中文字+英文词)：${stats.chineseCount + stats.englishWordCount}
+- 总字符数 (计空格)：${stats.totalCharsWithSpaces}
+- 总字符数 (不计空格)：${stats.totalCharsWithoutSpaces}
+
+【详细细分】
+- 中文字数：${stats.chineseCount}
+- 英文单词数：${stats.englishWordCount}
+- 数字总数：${stats.numberCount} (共 ${stats.digitCount} 个数字位)
+- 标点符号数：${stats.punctuationCount}
+- 空白字符数：${stats.whitespaceCount}
+- 有效段落数：${stats.paragraphCount}
+- 物理总行数：${stats.lineCount}
+
+【时间预估】
+- 预计阅读耗时：${stats.readingTimeDisplay}
+- 预计演讲演说耗时：${stats.speakingTimeDisplay}
+======================================
+`;
+            const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `字数统计报告_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('已导出统计报告文件');
+        });
+
+        // File Upload Trigger
+        btnUpload.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                textInput.value = event.target.result;
+                renderStatistics();
+                showToast(`已导入文件: ${file.name}`);
+            };
+            reader.readAsText(file);
+            fileInput.value = '';
+        });
+
+        // Drag and Drop Handling
+        ['dragenter', 'dragover'].forEach(name => {
+            textareaContainer.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                textareaContainer.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(name => {
+            textareaContainer.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                textareaContainer.classList.remove('dragover');
+            });
+        });
+
+        textareaContainer.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    textInput.value = event.target.result;
+                    renderStatistics();
+                    showToast(`已导入文件: ${file.name}`);
+                };
+                reader.readAsText(file);
+            } else {
+                const text = dt.getData('text');
+                if (text) {
+                    textInput.value = text;
+                    renderStatistics();
+                    showToast('已导入拖拽文本');
+                }
+            }
+        });
+
+        // Theme Toggle
+        function updateTheme(isDark) {
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-meta-color').setAttribute('content', isDark ? '#000000' : '#f5f5f7');
+            localStorage.setItem('theme-preference', isDark ? 'dark' : 'light');
+            
+            if (isDark) {
+                themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+            } else {
+                themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme-preference');
+        const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialDark = savedTheme ? savedTheme === 'dark' : systemPrefersDark;
+        updateTheme(initialDark);
+
+        btnThemeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            updateTheme(currentTheme !== 'dark');
+        });
+
+        renderStatistics();
+    </script>
+</body>
+</html>
