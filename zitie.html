@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>硬笔书法字帖打印 · A4自定义排版 (Apple Design)</title>
-    <meta name="description" content="基于 Apple Design 语言的高性能在线硬笔书法字帖生成与 A4 打印工具，支持米字格、田字格、回宫格、方格自定义排版，支持书法字体切换、标点规范占格、古诗词范文一键加载、描红临摹与直接打印导出 PDF。">
+    <meta name="description" content="基于 Apple Design 语言的高性能在线硬笔书法字帖生成与 A4 打印工具，支持米字格、田字格、回宫格、方格自定义排版，支持书法字体切换、标点规范四角占格、避头尾法则、首行缩进、自定义行列数与直接打印导出 PDF。">
     <meta name="theme-color" content="#f5f5f7" id="theme-meta-color">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="alternate icon" href="favicon.svg">
@@ -54,6 +54,7 @@
         }
 
         [data-theme="dark"] {
+            /* Apple Color Palette - Dark Mode */
             --bg-base: #000000;
             --surface-bg: #1c1c1e;
             --surface-solid: #2c2c2e;
@@ -392,7 +393,7 @@
             margin: 0 auto 40px;
             flex: 1;
             display: grid;
-            grid-template-columns: 430px 1fr;
+            grid-template-columns: 440px 1fr;
             gap: 24px;
             align-items: start;
         }
@@ -577,6 +578,55 @@
             display: inline-block;
         }
 
+        /* Number Steppers for Custom Rows/Cols */
+        .stepper-box {
+            display: flex;
+            align-items: center;
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            height: 36px;
+        }
+
+        .stepper-btn {
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease;
+            user-select: none;
+        }
+
+        .stepper-btn:hover {
+            background: var(--surface-border-hover);
+        }
+
+        .stepper-input {
+            flex: 1;
+            text-align: center;
+            background: transparent;
+            border: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .stepper-input::-webkit-outer-spin-button,
+        .stepper-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
         /* Toggles */
         .toggle-row {
             display: flex;
@@ -584,6 +634,7 @@
             justify-content: space-between;
             font-size: 0.85rem;
             color: var(--text-primary);
+            gap: 10px;
         }
 
         .apple-switch {
@@ -591,6 +642,7 @@
             display: inline-block;
             width: 44px;
             height: 24px;
+            flex-shrink: 0;
         }
 
         .apple-switch input {
@@ -1006,7 +1058,7 @@
             <div>
                 <div class="card-section-title">
                     <svg width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-                    <span>格线与版式规范</span>
+                    <span>格线与排版规格</span>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -1064,27 +1116,69 @@
                         </div>
                     </div>
 
-                    <!-- Layout Scale -->
+                    <!-- Layout Scale Presets & Custom -->
                     <div class="form-group">
                         <label class="form-label">单页规格 (列数 × 行数)</label>
                         <div class="segmented-control" id="ctrl-layout-size">
                             <button class="segment-btn" data-cols="10" data-rows="12">10×12 (大字)</button>
                             <button class="segment-btn active" data-cols="12" data-rows="14">12×14 (标准)</button>
                             <button class="segment-btn" data-cols="14" data-rows="16">14×16 (小字)</button>
+                            <button class="segment-btn" data-cols="custom" data-rows="custom">⚙️ 自定义</button>
+                        </div>
+
+                        <!-- Custom Dimension Controls -->
+                        <div id="custom-dimensions-box" style="display: none; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.78rem;">每行列数 (6~20列)</label>
+                                <div class="stepper-box">
+                                    <button class="stepper-btn" id="btn-cols-dec">-</button>
+                                    <input type="number" id="input-custom-cols" class="stepper-input" value="12" min="6" max="20">
+                                    <button class="stepper-btn" id="btn-cols-inc">+</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" style="font-size: 0.78rem;">每页行数 (6~26行)</label>
+                                <div class="stepper-box">
+                                    <button class="stepper-btn" id="btn-rows-dec">-</button>
+                                    <input type="number" id="input-custom-rows" class="stepper-input" value="14" min="6" max="26">
+                                    <button class="stepper-btn" id="btn-rows-inc">+</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Switch Options -->
                     <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
                         <div class="toggle-row">
-                            <span>标点符号规范占格 (左下四角定位)</span>
+                            <span>将文题与作者写入字帖格内</span>
+                            <label class="apple-switch">
+                                <input type="checkbox" id="toggle-in-grid-header" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-row">
+                            <span>段落首行缩进两格</span>
+                            <label class="apple-switch">
+                                <input type="checkbox" id="toggle-indent" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-row">
+                            <span>标点符号避头尾 (不在行首)</span>
+                            <label class="apple-switch">
+                                <input type="checkbox" id="toggle-avoid-head-punc" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-row">
+                            <span>标点符号规范占格 (四角定位)</span>
                             <label class="apple-switch">
                                 <input type="checkbox" id="toggle-punctuation" checked>
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <div class="toggle-row">
-                            <span>显示顶部文题与作者</span>
+                            <span>显示纸张上方大字标题</span>
                             <label class="apple-switch">
                                 <input type="checkbox" id="toggle-header" checked>
                                 <span class="slider"></span>
@@ -1136,7 +1230,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>硬笔书法字帖生成器 · 标准 A4 矢量排版 · 规范标点四角定位 · Apple Design</p>
+        <p>硬笔书法字帖生成器 · 标准 A4 矢量排版 · 规范标点避头尾与四角定位 · Apple Design</p>
     </footer>
 
     <!-- Script Logic -->
@@ -1222,6 +1316,9 @@
         const inputTitle = document.getElementById('input-title');
         const inputAuthor = document.getElementById('input-author');
         const inputContent = document.getElementById('input-content');
+        const toggleInGridHeader = document.getElementById('toggle-in-grid-header');
+        const toggleIndent = document.getElementById('toggle-indent');
+        const toggleAvoidHeadPunc = document.getElementById('toggle-avoid-head-punc');
         const togglePunctuation = document.getElementById('toggle-punctuation');
         const toggleHeader = document.getElementById('toggle-header');
         const toggleFooter = document.getElementById('toggle-footer');
@@ -1229,6 +1326,9 @@
         const pageCountBadge = document.getElementById('page-count-badge');
         const groupCharDepth = document.getElementById('group-char-depth');
         const fontScaleLabel = document.getElementById('font-scale-label');
+        const customDimensionsBox = document.getElementById('custom-dimensions-box');
+        const inputCustomCols = document.getElementById('input-custom-cols');
+        const inputCustomRows = document.getElementById('input-custom-rows');
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toast-message');
 
@@ -1311,23 +1411,138 @@
             </svg>`;
         }
 
-        // Character Filtering and Segmentation
-        function parseCharacters(text, allowPunctuation) {
-            if (!text) return [];
-            const result = [];
-            const lines = text.split(/\r?\n/);
+        // Layout Engine (Handles In-Grid Header, Indentation, and Line-Start Punctuation Prohibition)
+        function layoutCopybookGrid(rawText, titleText, authorText, cols, rows, config) {
+            const {
+                inGridHeader = true,
+                indentParagraphs = true,
+                allowPunctuation = true,
+                avoidHeadPunc = true,
+                practiceMode = 'trace'
+            } = config;
 
-            for (const line of lines) {
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (/\s/.test(char)) continue; // ignore whitespace
-                    if (!allowPunctuation && /[，。！？；：“”‘’（）《》【】「」『』、,.!?;:'"()]/g.test(char)) {
-                        continue;
+            // Punctuation marks that are strictly prohibited from appearing at the start of a line (GB/T 15834)
+            const forbiddenStartPuncs = ['，', '。', '、', '；', '：', '！', '？', '）', '》', '”', '’', '】', '」', '』', '、', ',', '.', ';', ':', '!', '?', ')', '>', ']'];
+
+            const gridRows = [];
+
+            function createEmptyRow() {
+                return new Array(cols).fill('');
+            }
+
+            // 1. In-Grid Header (Title & Author placed inside the grid cells)
+            if (inGridHeader && (titleText || authorText)) {
+                if (titleText) {
+                    const titleRow = createEmptyRow();
+                    const cleanTitle = titleText.replace(/\s+/g, '');
+                    const startCol = Math.max(0, Math.floor((cols - cleanTitle.length) / 2));
+                    for (let i = 0; i < cleanTitle.length && (startCol + i) < cols; i++) {
+                        titleRow[startCol + i] = cleanTitle[i];
                     }
-                    result.push(char);
+                    gridRows.push(titleRow);
+                }
+                if (authorText) {
+                    const authorRow = createEmptyRow();
+                    const cleanAuthor = authorText.replace(/\s+/g, '');
+                    const startCol = Math.max(0, Math.floor((cols - cleanAuthor.length) / 2));
+                    for (let i = 0; i < cleanAuthor.length && (startCol + i) < cols; i++) {
+                        authorRow[startCol + i] = cleanAuthor[i];
+                    }
+                    gridRows.push(authorRow);
+                }
+                // Add a blank row as visual separation after the title header in grid
+                gridRows.push(createEmptyRow());
+            }
+
+            // 2. Text layout by paragraphs
+            if (practiceMode === 'blank') {
+                while (gridRows.length < rows) {
+                    gridRows.push(createEmptyRow());
+                }
+            } else {
+                const paragraphs = rawText.split(/\r?\n/);
+
+                paragraphs.forEach(para => {
+                    if (!para.trim()) return;
+
+                    let currentRow = createEmptyRow();
+                    let colIdx = 0;
+
+                    // Indent 2 cells for start of paragraph
+                    if (indentParagraphs) {
+                        colIdx = Math.min(2, cols);
+                    }
+
+                    for (let i = 0; i < para.length; i++) {
+                        const char = para[i];
+                        if (/\s/.test(char)) continue; // ignore whitespace
+
+                        if (!allowPunctuation && /[，。！？；：“”‘’（）《》【】「」『』、,.!?;:'"()]/g.test(char)) {
+                            continue;
+                        }
+
+                        // Check if current row is full
+                        if (colIdx >= cols) {
+                            gridRows.push(currentRow);
+                            currentRow = createEmptyRow();
+                            colIdx = 0;
+                        }
+
+                        // Avoid Line-Start Punctuation (避头法则):
+                        // If character lands on col 0 and is forbidden at line start, pull previous character down with it
+                        if (colIdx === 0 && avoidHeadPunc && forbiddenStartPuncs.includes(char) && gridRows.length > 0) {
+                            const prevRow = gridRows[gridRows.length - 1];
+                            const prevChar = prevRow[cols - 1];
+                            if (prevChar && prevChar.trim()) {
+                                prevRow[cols - 1] = ''; // clear last cell of previous row
+                                currentRow[0] = prevChar; // move to first cell of new line
+                                currentRow[1] = char;     // place punctuation in second cell
+                                colIdx = 2;
+                                continue;
+                            }
+                        }
+
+                        currentRow[colIdx] = char;
+                        colIdx++;
+                    }
+
+                    if (colIdx > 0 || currentRow.some(c => c !== '')) {
+                        gridRows.push(currentRow);
+                    }
+                });
+            }
+
+            // 3. Alternate practice mode formatting (1 row text, 1 row blank)
+            let finalRows = [];
+            if (practiceMode === 'alternate') {
+                gridRows.forEach(row => {
+                    finalRows.push(row);
+                    finalRows.push(createEmptyRow());
+                });
+            } else {
+                finalRows = gridRows;
+            }
+
+            // 4. Paginate finalRows into pages of `rows` rows
+            const pages = [];
+            let currentSlice = [];
+
+            for (let r = 0; r < finalRows.length; r++) {
+                currentSlice.push(finalRows[r]);
+                if (currentSlice.length === rows) {
+                    pages.push(currentSlice);
+                    currentSlice = [];
                 }
             }
-            return result;
+
+            if (currentSlice.length > 0 || pages.length === 0) {
+                while (currentSlice.length < rows) {
+                    currentSlice.push(createEmptyRow());
+                }
+                pages.push(currentSlice);
+            }
+
+            return pages;
         }
 
         // Main Render Engine
@@ -1338,48 +1553,36 @@
             const titleText = inputTitle.value.trim();
             const authorText = inputAuthor.value.trim();
             const rawContent = inputContent.value;
+            const inGridHeader = toggleInGridHeader.checked;
+            const indentParagraphs = toggleIndent.checked;
+            const avoidHeadPunc = toggleAvoidHeadPunc.checked;
             const allowPunc = togglePunctuation.checked;
             const showHeader = toggleHeader.checked;
             const showFooter = toggleFooter.checked;
 
-            const chars = parseCharacters(rawContent, allowPunc);
-            const capacityPerPage = currentCols * currentRows;
-
-            let pagesChars = [];
             if (currentPracticeMode === 'blank') {
-                pagesChars = [[]]; // 1 blank page
                 groupCharDepth.style.display = 'none';
-            } else if (currentPracticeMode === 'alternate') {
-                groupCharDepth.style.display = 'flex';
-                const charsPerAlternatingPage = Math.floor(currentRows / 2) * currentCols;
-                
-                let curIndex = 0;
-                while (curIndex < chars.length || pagesChars.length === 0) {
-                    const pageSlice = chars.slice(curIndex, curIndex + charsPerAlternatingPage);
-                    pagesChars.push(pageSlice);
-                    curIndex += charsPerAlternatingPage;
-                    if (curIndex >= chars.length && pagesChars.length > 0) break;
-                }
             } else {
                 groupCharDepth.style.display = 'flex';
-                let curIndex = 0;
-                while (curIndex < chars.length || pagesChars.length === 0) {
-                    const pageSlice = chars.slice(curIndex, curIndex + capacityPerPage);
-                    pagesChars.push(pageSlice);
-                    curIndex += capacityPerPage;
-                    if (curIndex >= chars.length && pagesChars.length > 0) break;
-                }
             }
 
-            pageCountBadge.textContent = `共 ${pagesChars.length} 页`;
+            const pages = layoutCopybookGrid(rawContent, titleText, authorText, currentCols, currentRows, {
+                inGridHeader,
+                indentParagraphs,
+                allowPunctuation: allowPunc,
+                avoidHeadPunc,
+                practiceMode: currentPracticeMode
+            });
+
+            pageCountBadge.textContent = `共 ${pages.length} 页 (${currentCols}列 × ${currentRows}行)`;
             a4PagesContainer.innerHTML = '';
 
-            pagesChars.forEach((pageContent, pageIdx) => {
+            pages.forEach((pageRows, pageIdx) => {
                 const pageEl = document.createElement('div');
                 pageEl.className = 'a4-page';
                 pageEl.style.fontFamily = currentFontFamily;
 
-                // 1. Header
+                // 1. External Large Header (Top banner outside grid)
                 if (showHeader && (titleText || authorText)) {
                     const headerEl = document.createElement('div');
                     headerEl.className = 'a4-header';
@@ -1395,43 +1598,23 @@
                 gridBoard.className = 'grid-board';
                 gridBoard.style.gridTemplateColumns = `repeat(${currentCols}, 1fr)`;
 
-                // Fill Grid Cells
-                if (currentPracticeMode === 'alternate') {
-                    let charPointer = 0;
-                    for (let r = 0; r < currentRows; r++) {
-                        const isTextRow = (r % 2 === 0);
-                        for (let c = 0; c < currentCols; c++) {
-                            const cell = document.createElement('div');
-                            cell.className = 'grid-cell';
-
-                            let cellChar = '';
-                            if (isTextRow && charPointer < pageContent.length) {
-                                cellChar = pageContent[charPointer++];
-                            }
-                            cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor, currentFontFamily, currentFontScale);
-                            gridBoard.appendChild(cell);
-                        }
-                    }
-                } else if (currentPracticeMode === 'blank') {
-                    for (let i = 0; i < capacityPerPage; i++) {
+                // Fill Grid Cells row by row
+                pageRows.forEach(row => {
+                    row.forEach(cellChar => {
                         const cell = document.createElement('div');
                         cell.className = 'grid-cell';
-                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, '', currentCharColor, currentFontFamily, currentFontScale);
+                        cell.innerHTML = getCellSvg(
+                            currentGridType,
+                            currentGridColor,
+                            currentDashColor,
+                            cellChar,
+                            currentCharColor,
+                            currentFontFamily,
+                            currentFontScale
+                        );
                         gridBoard.appendChild(cell);
-                    }
-                } else {
-                    for (let i = 0; i < capacityPerPage; i++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'grid-cell';
-
-                        let cellChar = '';
-                        if (i < pageContent.length) {
-                            cellChar = pageContent[i];
-                        }
-                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor, currentFontFamily, currentFontScale);
-                        gridBoard.appendChild(cell);
-                    }
-                }
+                    });
+                });
 
                 pageEl.appendChild(gridBoard);
 
@@ -1441,7 +1624,7 @@
                     footerEl.className = 'a4-footer';
                     footerEl.innerHTML = `
                         <span>硬笔书法习字帖 · 标准 A4 临摹版</span>
-                        <span>第 ${pageIdx + 1} 页 / 共 ${pagesChars.length} 页</span>
+                        <span>第 ${pageIdx + 1} 页 / 共 ${pages.length} 页</span>
                     `;
                     pageEl.appendChild(footerEl);
                 }
@@ -1532,23 +1715,52 @@
             });
         });
 
-        // Layout Size Controller
+        // Layout Size & Custom Dimensions Controller
         document.querySelectorAll('#ctrl-layout-size .segment-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#ctrl-layout-size .segment-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentCols = parseInt(btn.getAttribute('data-cols'), 10);
-                currentRows = parseInt(btn.getAttribute('data-rows'), 10);
+                const cols = btn.getAttribute('data-cols');
+                const rows = btn.getAttribute('data-rows');
+                
+                if (cols === 'custom') {
+                    customDimensionsBox.style.display = 'grid';
+                    currentCols = parseInt(inputCustomCols.value, 10) || 12;
+                    currentRows = parseInt(inputCustomRows.value, 10) || 14;
+                } else {
+                    customDimensionsBox.style.display = 'none';
+                    currentCols = parseInt(cols, 10);
+                    currentRows = parseInt(rows, 10);
+                    inputCustomCols.value = currentCols;
+                    inputCustomRows.value = currentRows;
+                }
                 renderCopybook();
             });
         });
+
+        // Stepper Controls for Custom Cols/Rows
+        function updateCustomDimensions(c, r) {
+            currentCols = Math.min(20, Math.max(6, c));
+            currentRows = Math.min(26, Math.max(6, r));
+            inputCustomCols.value = currentCols;
+            inputCustomRows.value = currentRows;
+            renderCopybook();
+        }
+
+        document.getElementById('btn-cols-dec').addEventListener('click', () => updateCustomDimensions(currentCols - 1, currentRows));
+        document.getElementById('btn-cols-inc').addEventListener('click', () => updateCustomDimensions(currentCols + 1, currentRows));
+        document.getElementById('btn-rows-dec').addEventListener('click', () => updateCustomDimensions(currentCols, currentRows - 1));
+        document.getElementById('btn-rows-inc').addEventListener('click', () => updateCustomDimensions(currentCols, currentRows + 1));
+
+        inputCustomCols.addEventListener('change', () => updateCustomDimensions(parseInt(inputCustomCols.value, 10) || 12, currentRows));
+        inputCustomRows.addEventListener('change', () => updateCustomDimensions(currentCols, parseInt(inputCustomRows.value, 10) || 14));
 
         // Input Listeners
         [inputTitle, inputAuthor, inputContent].forEach(input => {
             input.addEventListener('input', renderCopybook);
         });
 
-        [togglePunctuation, toggleHeader, toggleFooter].forEach(toggle => {
+        [toggleInGridHeader, toggleIndent, toggleAvoidHeadPunc, togglePunctuation, toggleHeader, toggleFooter].forEach(toggle => {
             toggle.addEventListener('change', renderCopybook);
         });
 
