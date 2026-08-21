@@ -51,10 +51,10 @@
             /* Default Grid Colors */
             --grid-line-color: #d32f2f;
             --grid-dash-color: #ef5350;
-            --grid-font-color: rgba(0, 0, 0, 0.28);
         }
 
         [data-theme="dark"] {
+            /* Apple Color Palette - Dark Mode */
             --bg-base: #000000;
             --surface-bg: #1c1c1e;
             --surface-solid: #2c2c2e;
@@ -663,29 +663,27 @@
         .a4-page {
             width: 100%;
             max-width: 800px;
-            aspect-ratio: 210 / 297;
             background: #ffffff;
             color: #111111;
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-paper);
-            padding: 36px 40px;
+            padding: 32px 36px;
             display: flex;
             flex-direction: column;
             position: relative;
             box-sizing: border-box;
-            margin-bottom: 24px;
-            transition: transform 0.2s ease;
+            margin-bottom: 28px;
         }
 
         .a4-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             border-bottom: 2px solid var(--grid-line-color);
-            padding-bottom: 12px;
+            padding-bottom: 10px;
         }
 
         .a4-main-title {
-            font-family: "STKaiti", "楷体", "FZKai-Z03S", "PingFang SC", serif;
+            font-family: "STKaiti", "KaiTi", "楷体", "FZKai-Z03S", "PingFang SC", serif;
             font-size: 1.6rem;
             font-weight: bold;
             color: #111111;
@@ -694,32 +692,36 @@
         }
 
         .a4-subtitle {
-            font-family: "STKaiti", "楷体", "PingFang SC", serif;
+            font-family: "STKaiti", "KaiTi", "楷体", "PingFang SC", serif;
             font-size: 0.95rem;
             color: #555555;
             letter-spacing: 0.1em;
         }
 
-        /* Calligraphy Grid Board */
+        /* Calligraphy Grid Board (Zero gaps, crisp contiguous grid) */
         .grid-board {
-            flex: 1;
             display: grid;
             width: 100%;
-            border: 1.5px solid var(--grid-line-color);
+            border-top: 1.5px solid var(--grid-line-color);
+            border-left: 1.5px solid var(--grid-line-color);
             background: #ffffff;
             box-sizing: border-box;
+            margin: 0 auto;
         }
 
         .grid-cell {
             position: relative;
             box-sizing: border-box;
-            border-right: 1px solid var(--grid-line-color);
-            border-bottom: 1px solid var(--grid-line-color);
+            border-right: 1.5px solid var(--grid-line-color);
+            border-bottom: 1.5px solid var(--grid-line-color);
+            aspect-ratio: 1 / 1;
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            aspect-ratio: 1 / 1;
+            margin: 0;
+            padding: 0;
         }
 
         .grid-svg-bg {
@@ -727,28 +729,18 @@
             inset: 0;
             width: 100%;
             height: 100%;
+            display: block;
             pointer-events: none;
         }
 
-        .grid-char {
-            position: relative;
-            z-index: 2;
-            font-family: "STKaiti", "楷体", "FZKai-Z03S", serif;
-            font-size: 72%;
-            line-height: 1;
-            color: var(--grid-font-color);
-            user-select: none;
-            font-weight: 500;
-        }
-
         .a4-footer {
-            margin-top: 14px;
+            margin-top: 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             font-size: 0.72rem;
             color: #777777;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            border-top: 1px solid rgba(0, 0, 0, 0.12);
             padding-top: 8px;
         }
 
@@ -829,10 +821,9 @@
             .a4-page {
                 width: 100% !important;
                 max-width: 100% !important;
-                aspect-ratio: auto !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                padding: 10mm 12mm !important;
+                padding: 8mm 10mm !important;
                 margin: 0 !important;
                 page-break-after: always;
                 page-break-inside: avoid;
@@ -1021,6 +1012,16 @@
                         </div>
                     </div>
 
+                    <!-- Character Depth / Contrast -->
+                    <div class="form-group" id="group-char-depth">
+                        <label class="form-label">描红字样浓度</label>
+                        <div class="segmented-control" id="ctrl-char-depth">
+                            <button class="segment-btn active" data-color="rgba(0, 0, 0, 0.32)">浅灰描红 (30%)</button>
+                            <button class="segment-btn" data-color="rgba(0, 0, 0, 0.58)">中灰清晰 (60%)</button>
+                            <button class="segment-btn" data-color="#111111">墨黑范字 (100%)</button>
+                        </div>
+                    </div>
+
                     <!-- Layout Scale -->
                     <div class="form-group">
                         <label class="form-label">单页规格 (列数 × 行数)</label>
@@ -1169,6 +1170,7 @@
         let currentGridColor = '#d32f2f';
         let currentDashColor = '#ef5350';
         let currentPracticeMode = 'trace';
+        let currentCharColor = 'rgba(0, 0, 0, 0.32)';
         let currentCols = 12;
         let currentRows = 14;
 
@@ -1181,6 +1183,7 @@
         const toggleFooter = document.getElementById('toggle-footer');
         const a4PagesContainer = document.getElementById('a4-pages-container');
         const pageCountBadge = document.getElementById('page-count-badge');
+        const groupCharDepth = document.getElementById('group-char-depth');
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toast-message');
 
@@ -1193,28 +1196,43 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
         }
 
-        // SVG Grid Cell Pattern Generator
-        function getCellSvg(type, lineColor, dashColor) {
-            if (type === 'fangge') {
-                return '';
-            }
+        // SVG Grid Cell Pattern & Character Generator
+        function getCellSvg(type, lineColor, dashColor, char = '', charColor = 'rgba(0, 0, 0, 0.32)') {
+            let linesSvg = '';
             if (type === 'tianzige') {
-                return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <line x1="50" y1="0" x2="50" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
-                    <line x1="0" y1="50" x2="100" y2="50" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
-                </svg>`;
+                linesSvg = `
+                    <line x1="50" y1="0" x2="50" y2="100" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
+                    <line x1="0" y1="50" x2="100" y2="50" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
+                `;
+            } else if (type === 'huizige') {
+                linesSvg = `
+                    <rect x="22" y="22" width="56" height="56" fill="none" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
+                `;
+            } else if (type === 'mizige') {
+                linesSvg = `
+                    <line x1="50" y1="0" x2="50" y2="100" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
+                    <line x1="0" y1="50" x2="100" y2="50" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
+                    <line x1="0" y1="0" x2="100" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                    <line x1="0" y1="100" x2="100" y2="0" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                `;
             }
-            if (type === 'huizige') {
-                return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <rect x="22" y="22" width="56" height="56" fill="none" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
-                </svg>`;
+
+            let charSvg = '';
+            if (char) {
+                // Determine vertical position for punctuation vs characters
+                const isPunc = /[，。！？；：“”‘’（）《》、,.!?;:'"()]/g.test(char);
+                const yPos = isPunc ? '48' : '58';
+                const fontSize = isPunc ? '54' : '68';
+                
+                // Escape XML entities
+                const safeChar = char === '&' ? '&amp;' : (char === '<' ? '&lt;' : (char === '>' ? '&gt;' : char));
+                
+                charSvg = `<text x="50" y="${yPos}" text-anchor="middle" dominant-baseline="middle" font-size="${fontSize}" font-family="'STKaiti', 'KaiTi', '楷体', 'FZKai-Z03S', 'Noto Serif SC', serif" font-weight="500" fill="${charColor}">${safeChar}</text>`;
             }
-            // default: mizige (米字格)
+
             return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <line x1="50" y1="0" x2="50" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
-                <line x1="0" y1="50" x2="100" y2="50" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
-                <line x1="0" y1="0" x2="100" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
-                <line x1="0" y1="100" x2="100" y2="0" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                ${linesSvg}
+                ${charSvg}
             </svg>`;
         }
 
@@ -1222,7 +1240,6 @@
         function parseCharacters(text, allowPunctuation) {
             if (!text) return [];
             const result = [];
-            // Remove carriage returns, keep lines
             const lines = text.split(/\r?\n/);
 
             for (const line of lines) {
@@ -1258,9 +1275,9 @@
             let pagesChars = [];
             if (currentPracticeMode === 'blank') {
                 pagesChars = [[]]; // 1 blank page
+                groupCharDepth.style.display = 'none';
             } else if (currentPracticeMode === 'alternate') {
-                // Alternating rows: 1 row of chars, 1 row of blank
-                const effectiveRowCapacity = currentCols;
+                groupCharDepth.style.display = 'flex';
                 const charsPerAlternatingPage = Math.floor(currentRows / 2) * currentCols;
                 
                 let curIndex = 0;
@@ -1272,6 +1289,7 @@
                 }
             } else {
                 // Normal tracing mode
+                groupCharDepth.style.display = 'flex';
                 let curIndex = 0;
                 while (curIndex < chars.length || pagesChars.length === 0) {
                     const pageSlice = chars.slice(curIndex, curIndex + capacityPerPage);
@@ -1283,8 +1301,6 @@
 
             pageCountBadge.textContent = `共 ${pagesChars.length} 页`;
             a4PagesContainer.innerHTML = '';
-
-            const cellSvg = getCellSvg(currentGridType, currentGridColor, currentDashColor);
 
             // Render each A4 Page
             pagesChars.forEach((pageContent, pageIdx) => {
@@ -1302,11 +1318,10 @@
                     pageEl.appendChild(headerEl);
                 }
 
-                // 2. Grid Board
+                // 2. Grid Board (Contiguous, gapless square grid)
                 const gridBoard = document.createElement('div');
                 gridBoard.className = 'grid-board';
                 gridBoard.style.gridTemplateColumns = `repeat(${currentCols}, 1fr)`;
-                gridBoard.style.gridTemplateRows = `repeat(${currentRows}, 1fr)`;
 
                 // Fill Grid Cells
                 if (currentPracticeMode === 'alternate') {
@@ -1316,14 +1331,12 @@
                         for (let c = 0; c < currentCols; c++) {
                             const cell = document.createElement('div');
                             cell.className = 'grid-cell';
-                            cell.innerHTML = cellSvg;
 
+                            let cellChar = '';
                             if (isTextRow && charPointer < pageContent.length) {
-                                const charSpan = document.createElement('span');
-                                charSpan.className = 'grid-char';
-                                charSpan.textContent = pageContent[charPointer++];
-                                cell.appendChild(charSpan);
+                                cellChar = pageContent[charPointer++];
                             }
+                            cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor);
                             gridBoard.appendChild(cell);
                         }
                     }
@@ -1331,21 +1344,20 @@
                     for (let i = 0; i < capacityPerPage; i++) {
                         const cell = document.createElement('div');
                         cell.className = 'grid-cell';
-                        cell.innerHTML = cellSvg;
+                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, '', currentCharColor);
                         gridBoard.appendChild(cell);
                     }
                 } else {
+                    // Tracing mode
                     for (let i = 0; i < capacityPerPage; i++) {
                         const cell = document.createElement('div');
                         cell.className = 'grid-cell';
-                        cell.innerHTML = cellSvg;
 
+                        let cellChar = '';
                         if (i < pageContent.length) {
-                            const charSpan = document.createElement('span');
-                            charSpan.className = 'grid-char';
-                            charSpan.textContent = pageContent[i];
-                            cell.appendChild(charSpan);
+                            cellChar = pageContent[i];
                         }
+                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor);
                         gridBoard.appendChild(cell);
                     }
                 }
@@ -1413,6 +1425,16 @@
                 document.querySelectorAll('#ctrl-practice-mode .segment-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentPracticeMode = btn.getAttribute('data-value');
+                renderCopybook();
+            });
+        });
+
+        // Character Depth Controller
+        document.querySelectorAll('#ctrl-char-depth .segment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#ctrl-char-depth .segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCharColor = btn.getAttribute('data-color');
                 renderCopybook();
             });
         });
