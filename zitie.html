@@ -1504,8 +1504,8 @@
             if (inGridHeader && (titleText || authorText)) {
                 if (titleText) {
                     const titleRow = createEmptyRow();
-                    // Strip enclosing brackets from in-grid title for natural calligraphy look
-                    const cleanTitle = titleText.replace(/^[《〈「『\(（\[\s]+|[》〉」』\)）\]\s]+$/g, '').replace(/\s+/g, '');
+                    // Strip enclosing book marks from in-grid title, but preserve parenthesis like (其一)
+                    const cleanTitle = titleText.replace(/^[《〈「『【\s]+|[》〉」』】\s]+$/g, '').replace(/\s+/g, '');
                     const startCol = Math.max(0, Math.floor((cols - cleanTitle.length) / 2));
                     for (let i = 0; i < cleanTitle.length && (startCol + i) < cols; i++) {
                         titleRow[startCol + i] = { char: cleanTitle[i], isTitle: true };
