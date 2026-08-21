@@ -51,6 +51,8 @@
             /* Default Grid Colors */
             --grid-line-color: #d32f2f;
             --grid-dash-color: #ef5350;
+            --print-board-width: 180mm;
+            --print-max-height: 220mm;
         }
 
         [data-theme="dark"] {
@@ -715,37 +717,40 @@
         .a4-page {
             width: 100%;
             max-width: 800px;
+            aspect-ratio: 210 / 297;
             background: #ffffff;
             color: #111111;
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-paper);
-            padding: 32px 36px;
+            padding: 24px 32px 20px;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             position: relative;
             box-sizing: border-box;
             margin-bottom: 28px;
+            overflow: hidden;
         }
 
         .a4-header {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             border-bottom: 2px solid var(--grid-line-color);
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
         .a4-main-title {
             font-family: inherit;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #111111;
             letter-spacing: 0.15em;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .a4-subtitle {
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: #555555;
             letter-spacing: 0.1em;
         }
@@ -753,7 +758,6 @@
         /* Calligraphy Grid Board (Zero gaps, crisp contiguous grid) */
         .grid-board {
             display: grid;
-            width: 100%;
             border-top: 1.5px solid var(--grid-line-color);
             border-left: 1.5px solid var(--grid-line-color);
             background: #ffffff;
@@ -768,6 +772,7 @@
             border-bottom: 1.5px solid var(--grid-line-color);
             aspect-ratio: 1 / 1;
             width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -794,14 +799,14 @@
         }
 
         .a4-footer {
-            margin-top: 16px;
+            margin-top: 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             font-size: 0.72rem;
             color: #777777;
             border-top: 1px solid rgba(0, 0, 0, 0.12);
-            padding-top: 8px;
+            padding-top: 6px;
         }
 
         /* Toast Notification */
@@ -847,7 +852,7 @@
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 8mm 10mm;
+                margin: 6mm 10mm;
             }
 
             body {
@@ -881,15 +886,23 @@
             .a4-page {
                 width: 100% !important;
                 max-width: 100% !important;
+                height: 284mm !important;
+                max-height: 284mm !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                padding: 8mm 10mm !important;
+                padding: 5mm 6mm !important;
                 margin: 0 !important;
-                page-break-after: always;
-                page-break-inside: avoid;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                overflow: hidden !important;
             }
 
             .grid-board {
+                width: var(--print-board-width, 100%) !important;
+                max-height: var(--print-max-height, 225mm) !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
@@ -1342,9 +1355,14 @@
         }
 
         // Chinese Calligraphy Punctuation Quadrant Positioning (GB/T 15834-2011 规范)
-        function getCharPositionAndScale(char, baseScale = 0.68) {
+        function getCharPositionAndScale(char, baseScale = 0.68, isTitleChar = false) {
             const scaleFactor = baseScale / 0.68;
             
+            // If it's a title character inside the grid, always keep centered and natural
+            if (isTitleChar) {
+                return { x: 50, y: 58, fontSize: Math.round(68 * scaleFactor) };
+            }
+
             // 句末与句中标点：居左下角象限（x: 30%, y: 72%）
             const bottomLeftPuncs = ['，', '。', '、', '；', '：', ',', '.', ';', ':'];
             // 疑问/感叹标点：居左半侧偏中（x: 35%, y: 56%）
@@ -1377,7 +1395,7 @@
         }
 
         // SVG Grid Cell Pattern & Character Generator
-        function getCellSvg(type, lineColor, dashColor, char = '', charColor = 'rgba(0, 0, 0, 0.30)', fontFamily = currentFontFamily, baseScale = currentFontScale) {
+        function getCellSvg(type, lineColor, dashColor, cellData = '', charColor = 'rgba(0, 0, 0, 0.30)', fontFamily = currentFontFamily, baseScale = currentFontScale) {
             let linesSvg = '';
             if (type === 'tianzige') {
                 linesSvg = `
@@ -1398,8 +1416,11 @@
             }
 
             let charSvg = '';
+            const char = typeof cellData === 'object' && cellData !== null ? cellData.char : cellData;
+            const isTitleChar = typeof cellData === 'object' && cellData !== null ? !!cellData.isTitle : false;
+
             if (char) {
-                const pos = getCharPositionAndScale(char, baseScale);
+                const pos = getCharPositionAndScale(char, baseScale, isTitleChar);
                 const safeChar = char === '&' ? '&amp;' : (char === '<' ? '&lt;' : (char === '>' ? '&gt;' : char));
                 
                 charSvg = `<text x="${pos.x}" y="${pos.y}" text-anchor="middle" dominant-baseline="middle" font-size="${pos.fontSize}" font-family="${fontFamily}" font-weight="normal" fill="${charColor}" style="stroke: none !important; fill: ${charColor} !important;">${safeChar}</text>`;
@@ -1421,7 +1442,6 @@
                 practiceMode = 'trace'
             } = config;
 
-            // Punctuation marks that are strictly prohibited from appearing at the start of a line (GB/T 15834)
             const forbiddenStartPuncs = ['，', '。', '、', '；', '：', '！', '？', '）', '》', '”', '’', '】', '」', '』', '、', ',', '.', ';', ':', '!', '?', ')', '>', ']'];
 
             const gridRows = [];
@@ -1430,14 +1450,15 @@
                 return new Array(cols).fill('');
             }
 
-            // 1. In-Grid Header (Title & Author placed inside the grid cells)
+            // 1. In-Grid Header (Title & Author placed cleanly inside the grid cells)
             if (inGridHeader && (titleText || authorText)) {
                 if (titleText) {
                     const titleRow = createEmptyRow();
-                    const cleanTitle = titleText.replace(/\s+/g, '');
+                    // Strip enclosing brackets from in-grid title for natural calligraphy look
+                    const cleanTitle = titleText.replace(/^[《〈「『\(（\[\s]+|[》〉」』\)）\]\s]+$/g, '').replace(/\s+/g, '');
                     const startCol = Math.max(0, Math.floor((cols - cleanTitle.length) / 2));
                     for (let i = 0; i < cleanTitle.length && (startCol + i) < cols; i++) {
-                        titleRow[startCol + i] = cleanTitle[i];
+                        titleRow[startCol + i] = { char: cleanTitle[i], isTitle: true };
                     }
                     gridRows.push(titleRow);
                 }
@@ -1446,7 +1467,7 @@
                     const cleanAuthor = authorText.replace(/\s+/g, '');
                     const startCol = Math.max(0, Math.floor((cols - cleanAuthor.length) / 2));
                     for (let i = 0; i < cleanAuthor.length && (startCol + i) < cols; i++) {
-                        authorRow[startCol + i] = cleanAuthor[i];
+                        authorRow[startCol + i] = { char: cleanAuthor[i], isTitle: true };
                     }
                     gridRows.push(authorRow);
                 }
@@ -1489,10 +1510,10 @@
                         }
 
                         // Avoid Line-Start Punctuation (避头法则):
-                        // If character lands on col 0 and is forbidden at line start, pull previous character down with it
                         if (colIdx === 0 && avoidHeadPunc && forbiddenStartPuncs.includes(char) && gridRows.length > 0) {
                             const prevRow = gridRows[gridRows.length - 1];
-                            const prevChar = prevRow[cols - 1];
+                            const prevItem = prevRow[cols - 1];
+                            const prevChar = typeof prevItem === 'object' && prevItem !== null ? prevItem.char : prevItem;
                             if (prevChar && prevChar.trim()) {
                                 prevRow[cols - 1] = ''; // clear last cell of previous row
                                 currentRow[0] = prevChar; // move to first cell of new line
@@ -1506,7 +1527,7 @@
                         colIdx++;
                     }
 
-                    if (colIdx > 0 || currentRow.some(c => c !== '')) {
+                    if (colIdx > 0 || currentRow.some(c => (typeof c === 'object' ? c.char : c) !== '')) {
                         gridRows.push(currentRow);
                     }
                 });
@@ -1566,6 +1587,14 @@
                 groupCharDepth.style.display = 'flex';
             }
 
+            // Calculate precise print width and max-height to guarantee zero truncation
+            const maxPrintHeightMm = showHeader ? 220 : 246;
+            const maxPrintWidthMm = 180;
+            const printCellSizeMm = Math.min(maxPrintWidthMm / currentCols, maxPrintHeightMm / currentRows);
+            const printBoardWidthMm = (printCellSizeMm * currentCols).toFixed(2);
+            document.documentElement.style.setProperty('--print-board-width', `${printBoardWidthMm}mm`);
+            document.documentElement.style.setProperty('--print-max-height', `${maxPrintHeightMm}mm`);
+
             const pages = layoutCopybookGrid(rawContent, titleText, authorText, currentCols, currentRows, {
                 inGridHeader,
                 indentParagraphs,
@@ -1576,6 +1605,12 @@
 
             pageCountBadge.textContent = `共 ${pages.length} 页 (${currentCols}列 × ${currentRows}行)`;
             a4PagesContainer.innerHTML = '';
+
+            // Calculate preview grid container dimensions to prevent vertical screen overflow
+            const previewMaxHeightPx = showHeader ? 500 : 560;
+            const previewMaxWidthPx = 710;
+            const previewCellSizePx = Math.min(previewMaxWidthPx / currentCols, previewMaxHeightPx / currentRows);
+            const previewBoardWidthPx = Math.round(previewCellSizePx * currentCols);
 
             pages.forEach((pageRows, pageIdx) => {
                 const pageEl = document.createElement('div');
@@ -1593,21 +1628,22 @@
                     pageEl.appendChild(headerEl);
                 }
 
-                // 2. Grid Board
+                // 2. Grid Board (Strictly bounded width and height)
                 const gridBoard = document.createElement('div');
                 gridBoard.className = 'grid-board';
                 gridBoard.style.gridTemplateColumns = `repeat(${currentCols}, 1fr)`;
+                gridBoard.style.width = `${previewBoardWidthPx}px`;
 
                 // Fill Grid Cells row by row
                 pageRows.forEach(row => {
-                    row.forEach(cellChar => {
+                    row.forEach(cellData => {
                         const cell = document.createElement('div');
                         cell.className = 'grid-cell';
                         cell.innerHTML = getCellSvg(
                             currentGridType,
                             currentGridColor,
                             currentDashColor,
-                            cellChar,
+                            cellData,
                             currentCharColor,
                             currentFontFamily,
                             currentFontScale
