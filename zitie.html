@@ -722,7 +722,7 @@
             color: #111111;
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-paper);
-            padding: 24px 32px 20px;
+            padding: 4% 5.2% 3.5%; /* % of width to perfectly match scale */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -755,7 +755,18 @@
             letter-spacing: 0.1em;
         }
 
-        /* Calligraphy Grid Board (Zero gaps, crisp contiguous grid) */
+        /* Flex Wrapper to center vertically when width is scaled down by height constraint */
+        .grid-wrapper {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 0; /* allows flex shrink */
+            padding: 8px 0;
+        }
+
+        /* Calligraphy Grid Board */
         .grid-board {
             display: grid;
             border-top: 1.5px solid var(--grid-line-color);
@@ -763,6 +774,8 @@
             background: #ffffff;
             box-sizing: border-box;
             margin: 0 auto;
+            /* Width is dynamically assigned via JS percentage */
+            max-width: 100%;
         }
 
         .grid-cell {
@@ -890,7 +903,7 @@
                 max-height: 284mm !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                padding: 5mm 6mm !important;
+                padding: 4% 5.2% 3.5% !important;
                 margin: 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -900,9 +913,16 @@
                 overflow: hidden !important;
             }
 
+            .grid-wrapper {
+                flex: 1 !important;
+                width: 100% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                min-height: 0 !important;
+            }
+
             .grid-board {
-                width: var(--print-board-width, 100%) !important;
-                max-height: var(--print-max-height, 225mm) !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
@@ -1587,14 +1607,6 @@
                 groupCharDepth.style.display = 'flex';
             }
 
-            // Calculate precise print width and max-height to guarantee zero truncation
-            const maxPrintHeightMm = showHeader ? 220 : 246;
-            const maxPrintWidthMm = 180;
-            const printCellSizeMm = Math.min(maxPrintWidthMm / currentCols, maxPrintHeightMm / currentRows);
-            const printBoardWidthMm = (printCellSizeMm * currentCols).toFixed(2);
-            document.documentElement.style.setProperty('--print-board-width', `${printBoardWidthMm}mm`);
-            document.documentElement.style.setProperty('--print-max-height', `${maxPrintHeightMm}mm`);
-
             const pages = layoutCopybookGrid(rawContent, titleText, authorText, currentCols, currentRows, {
                 inGridHeader,
                 indentParagraphs,
@@ -1606,18 +1618,41 @@
             pageCountBadge.textContent = `共 ${pages.length} 页 (${currentCols}列 × ${currentRows}行)`;
             a4PagesContainer.innerHTML = '';
 
-            // Calculate preview grid container dimensions to prevent vertical screen overflow
-            const previewMaxHeightPx = showHeader ? 500 : 560;
-            const previewMaxWidthPx = 710;
-            const previewCellSizePx = Math.min(previewMaxWidthPx / currentCols, previewMaxHeightPx / currentRows);
-            const previewBoardWidthPx = Math.round(previewCellSizePx * currentCols);
+            // -------------------------------------------------------------------
+            // A4 Geometric Bounds Algorithm (Guarantees no truncation & perfect scale)
+            // -------------------------------------------------------------------
+            // Calculate proportional dimensions relative to page width (100)
+            const pageW = 100;
+            const pageH = 100 * (297 / 210); // ~141.42 (A4 Aspect Ratio)
+            
+            const padX = 10.4; // 5.2% left + 5.2% right padding
+            const padY = 7.5;  // 4% top + 3.5% bottom padding
+            
+            const contentW = pageW - padX; 
+            let contentH = pageH - padY;   
+            
+            if (showHeader) contentH -= 5.5; // ~5.5% relative height for header & margin
+            if (showFooter) contentH -= 2.5; // ~2.5% relative height for footer
+            
+            const spaceRatio = contentW / contentH;
+            const gridRatio = currentCols / currentRows;
+            
+            let boardWidthPercent;
+            if (gridRatio >= spaceRatio) {
+                // Wider than available space -> Width constrained
+                boardWidthPercent = 100;
+            } else {
+                // Taller than available space -> Height constrained
+                const requiredWidth = contentH * gridRatio;
+                boardWidthPercent = (requiredWidth / contentW) * 100;
+            }
 
             pages.forEach((pageRows, pageIdx) => {
                 const pageEl = document.createElement('div');
                 pageEl.className = 'a4-page';
                 pageEl.style.fontFamily = currentFontFamily;
 
-                // 1. External Large Header (Top banner outside grid)
+                // 1. External Large Header
                 if (showHeader && (titleText || authorText)) {
                     const headerEl = document.createElement('div');
                     headerEl.className = 'a4-header';
@@ -1628,13 +1663,17 @@
                     pageEl.appendChild(headerEl);
                 }
 
-                // 2. Grid Board (Strictly bounded width and height)
+                // 2. Grid Wrapper & Board
+                const gridWrapper = document.createElement('div');
+                gridWrapper.className = 'grid-wrapper';
+
                 const gridBoard = document.createElement('div');
                 gridBoard.className = 'grid-board';
                 gridBoard.style.gridTemplateColumns = `repeat(${currentCols}, 1fr)`;
-                gridBoard.style.width = `${previewBoardWidthPx}px`;
+                // Crucial: Use exact percentage width for dynamic fit, grid aspect-ratio maintains height!
+                gridBoard.style.width = `${boardWidthPercent}%`;
 
-                // Fill Grid Cells row by row
+                // Fill Grid Cells
                 pageRows.forEach(row => {
                     row.forEach(cellData => {
                         const cell = document.createElement('div');
@@ -1652,7 +1691,8 @@
                     });
                 });
 
-                pageEl.appendChild(gridBoard);
+                gridWrapper.appendChild(gridBoard);
+                pageEl.appendChild(gridWrapper);
 
                 // 3. Footer
                 if (showFooter) {
