@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>硬笔书法字帖打印 · A4自定义排版 (Apple Design)</title>
-    <meta name="description" content="基于 Apple Design 语言的高性能在线硬笔书法字帖生成与 A4 打印工具，支持米字格、田字格、回宫格、方格自定义排版，支持古诗词范文一键加载、描红临摹与直接打印导出 PDF。">
+    <meta name="description" content="基于 Apple Design 语言的高性能在线硬笔书法字帖生成与 A4 打印工具，支持米字格、田字格、回宫格、方格自定义排版，支持书法字体切换、标点规范占格、古诗词范文一键加载、描红临摹与直接打印导出 PDF。">
     <meta name="theme-color" content="#f5f5f7" id="theme-meta-color">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="alternate icon" href="favicon.svg">
@@ -54,7 +54,6 @@
         }
 
         [data-theme="dark"] {
-            /* Apple Color Palette - Dark Mode */
             --bg-base: #000000;
             --surface-bg: #1c1c1e;
             --surface-solid: #2c2c2e;
@@ -393,7 +392,7 @@
             margin: 0 auto 40px;
             flex: 1;
             display: grid;
-            grid-template-columns: 420px 1fr;
+            grid-template-columns: 430px 1fr;
             gap: 24px;
             align-items: start;
         }
@@ -464,7 +463,7 @@
         }
 
         .textarea-custom {
-            min-height: 120px;
+            min-height: 110px;
             line-height: 1.6;
             resize: vertical;
         }
@@ -512,7 +511,7 @@
 
         .segment-btn {
             flex: 1;
-            padding: 6px 10px;
+            padding: 6px 8px;
             font-size: 0.82rem;
             font-weight: 500;
             color: var(--text-secondary);
@@ -523,6 +522,7 @@
             transition: all 0.15s ease;
             text-align: center;
             user-select: none;
+            white-space: nowrap;
         }
 
         .segment-btn:hover {
@@ -683,7 +683,7 @@
         }
 
         .a4-main-title {
-            font-family: "STKaiti", "KaiTi", "楷体", "FZKai-Z03S", "PingFang SC", serif;
+            font-family: inherit;
             font-size: 1.6rem;
             font-weight: bold;
             color: #111111;
@@ -692,7 +692,7 @@
         }
 
         .a4-subtitle {
-            font-family: "STKaiti", "KaiTi", "楷体", "PingFang SC", serif;
+            font-family: inherit;
             font-size: 0.95rem;
             color: #555555;
             letter-spacing: 0.1em;
@@ -730,6 +730,14 @@
             width: 100%;
             height: 100%;
             display: block;
+            pointer-events: none;
+        }
+
+        /* Critical: Prevent global svg stroke/fill from altering text rendering */
+        .grid-svg-bg text {
+            stroke: none !important;
+            stroke-width: 0 !important;
+            user-select: none;
             pointer-events: none;
         }
 
@@ -845,7 +853,7 @@
             }
         }
 
-        svg {
+        svg:not(.grid-svg-bg) {
             display: inline-block;
             vertical-align: middle;
             fill: none;
@@ -960,6 +968,40 @@
                 </div>
             </div>
 
+            <!-- Typography & Font Settings -->
+            <div>
+                <div class="card-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                    <span>书法字体与大小</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <!-- Font Family -->
+                    <div class="form-group">
+                        <label class="form-label">书法字体样式</label>
+                        <div class="segmented-control" id="ctrl-font-family">
+                            <button class="segment-btn active" data-font="'STKaiti', 'KaiTi', '楷体', 'FZKai-Z03S', 'Kaiti SC', 'BiauKai', serif">楷体 (标准)</button>
+                            <button class="segment-btn" data-font="'STXingkai', 'Xingkai SC', '华文行楷', 'STKaiti', cursive, serif">行楷 (流畅)</button>
+                            <button class="segment-btn" data-font="'STSong', 'Songti SC', 'SimSun', '宋体', 'Noto Serif SC', serif">宋体 (典雅)</button>
+                            <button class="segment-btn" data-font="'FangSong', '仿宋', 'STFangsong', '华文仿宋', serif">仿宋 (清秀)</button>
+                        </div>
+                    </div>
+
+                    <!-- Font Scale -->
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="form-label">格内字号比例</label>
+                            <span id="font-scale-label" style="font-size: 0.76rem; color: var(--apple-blue); font-weight: 600;">68% (标准)</span>
+                        </div>
+                        <div class="segmented-control" id="ctrl-font-scale">
+                            <button class="segment-btn" data-scale="0.58">紧凑 (58%)</button>
+                            <button class="segment-btn active" data-scale="0.68">标准 (68%)</button>
+                            <button class="segment-btn" data-scale="0.78">饱满 (78%)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Grid & Layout Settings -->
             <div>
                 <div class="card-section-title">
@@ -1014,11 +1056,11 @@
 
                     <!-- Character Depth / Contrast -->
                     <div class="form-group" id="group-char-depth">
-                        <label class="form-label">描红字样浓度</label>
+                        <label class="form-label">范字颜色与浓度</label>
                         <div class="segmented-control" id="ctrl-char-depth">
-                            <button class="segment-btn active" data-color="rgba(0, 0, 0, 0.32)">浅灰描红 (30%)</button>
-                            <button class="segment-btn" data-color="rgba(0, 0, 0, 0.58)">中灰清晰 (60%)</button>
-                            <button class="segment-btn" data-color="#111111">墨黑范字 (100%)</button>
+                            <button class="segment-btn active" data-color="rgba(0, 0, 0, 0.30)">浅灰描红 (30%)</button>
+                            <button class="segment-btn" data-color="rgba(0, 0, 0, 0.60)">中灰清晰 (60%)</button>
+                            <button class="segment-btn" data-color="#000000">墨黑范字 (100%)</button>
                         </div>
                     </div>
 
@@ -1035,7 +1077,7 @@
                     <!-- Switch Options -->
                     <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
                         <div class="toggle-row">
-                            <span>标点符号独立占格</span>
+                            <span>标点符号规范占格 (左下四角定位)</span>
                             <label class="apple-switch">
                                 <input type="checkbox" id="toggle-punctuation" checked>
                                 <span class="slider"></span>
@@ -1094,7 +1136,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>硬笔书法字帖生成器 · 标准 A4 矢量排版 · 保护视力与练习规范 · Apple Design</p>
+        <p>硬笔书法字帖生成器 · 标准 A4 矢量排版 · 规范标点四角定位 · Apple Design</p>
     </footer>
 
     <!-- Script Logic -->
@@ -1170,7 +1212,9 @@
         let currentGridColor = '#d32f2f';
         let currentDashColor = '#ef5350';
         let currentPracticeMode = 'trace';
-        let currentCharColor = 'rgba(0, 0, 0, 0.32)';
+        let currentCharColor = 'rgba(0, 0, 0, 0.30)';
+        let currentFontFamily = "'STKaiti', 'KaiTi', '楷体', 'FZKai-Z03S', 'Kaiti SC', 'BiauKai', serif";
+        let currentFontScale = 0.68;
         let currentCols = 12;
         let currentRows = 14;
 
@@ -1184,6 +1228,7 @@
         const a4PagesContainer = document.getElementById('a4-pages-container');
         const pageCountBadge = document.getElementById('page-count-badge');
         const groupCharDepth = document.getElementById('group-char-depth');
+        const fontScaleLabel = document.getElementById('font-scale-label');
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toast-message');
 
@@ -1196,8 +1241,43 @@
             toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
         }
 
+        // Chinese Calligraphy Punctuation Quadrant Positioning (GB/T 15834-2011 规范)
+        function getCharPositionAndScale(char, baseScale = 0.68) {
+            const scaleFactor = baseScale / 0.68;
+            
+            // 句末与句中标点：居左下角象限（x: 30%, y: 72%）
+            const bottomLeftPuncs = ['，', '。', '、', '；', '：', ',', '.', ';', ':'];
+            // 疑问/感叹标点：居左半侧偏中（x: 35%, y: 56%）
+            const leftMiddlePuncs = ['！', '？', '!', '?'];
+            // 前引号/前书名号/前括号：居右上角/偏右（x: 68%, y: 48%）
+            const rightPuncs = ['“', '‘', '（', '《', '【', '「', '『', '(', '<', '['];
+            // 后引号/后书名号/后括号：居左上角/偏左（x: 32%, y: 48%）
+            const leftPuncs = ['”', '’', '）', '》', '】', '」', '』', ')', '>', ']'];
+            // 破折号/省略号：居中
+            const centerDashPuncs = ['—', '…', '-', '～'];
+
+            if (bottomLeftPuncs.includes(char)) {
+                return { x: 30, y: 72, fontSize: Math.round(56 * scaleFactor) };
+            }
+            if (leftMiddlePuncs.includes(char)) {
+                return { x: 35, y: 56, fontSize: Math.round(58 * scaleFactor) };
+            }
+            if (rightPuncs.includes(char)) {
+                return { x: 68, y: 48, fontSize: Math.round(52 * scaleFactor) };
+            }
+            if (leftPuncs.includes(char)) {
+                return { x: 32, y: 48, fontSize: Math.round(52 * scaleFactor) };
+            }
+            if (centerDashPuncs.includes(char)) {
+                return { x: 50, y: 54, fontSize: Math.round(50 * scaleFactor) };
+            }
+
+            // 普通汉字与字母：视觉光学居中 (x: 50, y: 58)
+            return { x: 50, y: 58, fontSize: Math.round(68 * scaleFactor) };
+        }
+
         // SVG Grid Cell Pattern & Character Generator
-        function getCellSvg(type, lineColor, dashColor, char = '', charColor = 'rgba(0, 0, 0, 0.32)') {
+        function getCellSvg(type, lineColor, dashColor, char = '', charColor = 'rgba(0, 0, 0, 0.30)', fontFamily = currentFontFamily, baseScale = currentFontScale) {
             let linesSvg = '';
             if (type === 'tianzige') {
                 linesSvg = `
@@ -1212,22 +1292,17 @@
                 linesSvg = `
                     <line x1="50" y1="0" x2="50" y2="100" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
                     <line x1="0" y1="50" x2="100" y2="50" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
-                    <line x1="0" y1="0" x2="100" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
-                    <line x1="0" y1="100" x2="100" y2="0" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                    <line x1="0" y1="0" x2="100" y2="100" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
+                    <line x1="0" y1="100" x2="100" y2="0" stroke="${dashColor}" stroke-width="1.2" stroke-dasharray="3,3" />
                 `;
             }
 
             let charSvg = '';
             if (char) {
-                // Determine vertical position for punctuation vs characters
-                const isPunc = /[，。！？；：“”‘’（）《》、,.!?;:'"()]/g.test(char);
-                const yPos = isPunc ? '48' : '58';
-                const fontSize = isPunc ? '54' : '68';
-                
-                // Escape XML entities
+                const pos = getCharPositionAndScale(char, baseScale);
                 const safeChar = char === '&' ? '&amp;' : (char === '<' ? '&lt;' : (char === '>' ? '&gt;' : char));
                 
-                charSvg = `<text x="50" y="${yPos}" text-anchor="middle" dominant-baseline="middle" font-size="${fontSize}" font-family="'STKaiti', 'KaiTi', '楷体', 'FZKai-Z03S', 'Noto Serif SC', serif" font-weight="500" fill="${charColor}">${safeChar}</text>`;
+                charSvg = `<text x="${pos.x}" y="${pos.y}" text-anchor="middle" dominant-baseline="middle" font-size="${pos.fontSize}" font-family="${fontFamily}" font-weight="normal" fill="${charColor}" style="stroke: none !important; fill: ${charColor} !important;">${safeChar}</text>`;
             }
 
             return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -1245,8 +1320,8 @@
             for (const line of lines) {
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
-                    if (/\s/.test(char)) continue; // ignore pure whitespaces
-                    if (!allowPunctuation && /[，。！？；：“”‘’（）《》、,.!?;:'"()]/g.test(char)) {
+                    if (/\s/.test(char)) continue; // ignore whitespace
+                    if (!allowPunctuation && /[，。！？；：“”‘’（）《》【】「」『』、,.!?;:'"()]/g.test(char)) {
                         continue;
                     }
                     result.push(char);
@@ -1257,7 +1332,6 @@
 
         // Main Render Engine
         function renderCopybook() {
-            // Set CSS variables for colors
             document.documentElement.style.setProperty('--grid-line-color', currentGridColor);
             document.documentElement.style.setProperty('--grid-dash-color', currentDashColor);
 
@@ -1271,7 +1345,6 @@
             const chars = parseCharacters(rawContent, allowPunc);
             const capacityPerPage = currentCols * currentRows;
 
-            // Compute lines / pages needed
             let pagesChars = [];
             if (currentPracticeMode === 'blank') {
                 pagesChars = [[]]; // 1 blank page
@@ -1288,7 +1361,6 @@
                     if (curIndex >= chars.length && pagesChars.length > 0) break;
                 }
             } else {
-                // Normal tracing mode
                 groupCharDepth.style.display = 'flex';
                 let curIndex = 0;
                 while (curIndex < chars.length || pagesChars.length === 0) {
@@ -1302,10 +1374,10 @@
             pageCountBadge.textContent = `共 ${pagesChars.length} 页`;
             a4PagesContainer.innerHTML = '';
 
-            // Render each A4 Page
             pagesChars.forEach((pageContent, pageIdx) => {
                 const pageEl = document.createElement('div');
                 pageEl.className = 'a4-page';
+                pageEl.style.fontFamily = currentFontFamily;
 
                 // 1. Header
                 if (showHeader && (titleText || authorText)) {
@@ -1318,7 +1390,7 @@
                     pageEl.appendChild(headerEl);
                 }
 
-                // 2. Grid Board (Contiguous, gapless square grid)
+                // 2. Grid Board
                 const gridBoard = document.createElement('div');
                 gridBoard.className = 'grid-board';
                 gridBoard.style.gridTemplateColumns = `repeat(${currentCols}, 1fr)`;
@@ -1336,7 +1408,7 @@
                             if (isTextRow && charPointer < pageContent.length) {
                                 cellChar = pageContent[charPointer++];
                             }
-                            cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor);
+                            cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor, currentFontFamily, currentFontScale);
                             gridBoard.appendChild(cell);
                         }
                     }
@@ -1344,11 +1416,10 @@
                     for (let i = 0; i < capacityPerPage; i++) {
                         const cell = document.createElement('div');
                         cell.className = 'grid-cell';
-                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, '', currentCharColor);
+                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, '', currentCharColor, currentFontFamily, currentFontScale);
                         gridBoard.appendChild(cell);
                     }
                 } else {
-                    // Tracing mode
                     for (let i = 0; i < capacityPerPage; i++) {
                         const cell = document.createElement('div');
                         cell.className = 'grid-cell';
@@ -1357,7 +1428,7 @@
                         if (i < pageContent.length) {
                             cellChar = pageContent[i];
                         }
-                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor);
+                        cell.innerHTML = getCellSvg(currentGridType, currentGridColor, currentDashColor, cellChar, currentCharColor, currentFontFamily, currentFontScale);
                         gridBoard.appendChild(cell);
                     }
                 }
@@ -1398,6 +1469,28 @@
             });
         });
 
+        // Font Family Controller
+        document.querySelectorAll('#ctrl-font-family .segment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#ctrl-font-family .segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFontFamily = btn.getAttribute('data-font');
+                renderCopybook();
+                showToast(`已切换字体: ${btn.textContent.split(' ')[0]}`);
+            });
+        });
+
+        // Font Scale Controller
+        document.querySelectorAll('#ctrl-font-scale .segment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#ctrl-font-scale .segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFontScale = parseFloat(btn.getAttribute('data-scale'));
+                fontScaleLabel.textContent = `${Math.round(currentFontScale * 100)}% (${btn.textContent.split(' ')[0]})`;
+                renderCopybook();
+            });
+        });
+
         // Grid Type Controller
         document.querySelectorAll('#ctrl-grid-type .segment-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1429,7 +1522,7 @@
             });
         });
 
-        // Character Depth Controller
+        // Character Depth / Contrast Controller
         document.querySelectorAll('#ctrl-char-depth .segment-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('#ctrl-char-depth .segment-btn').forEach(b => b.classList.remove('active'));
