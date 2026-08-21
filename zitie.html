@@ -789,7 +789,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow: visible; /* ALLOW HANGING PUNCTUATION */
             margin: 0;
             padding: 0;
         }
@@ -801,6 +801,7 @@
             height: 100%;
             display: block;
             pointer-events: none;
+            overflow: visible !important; /* ALLOW HANGING PUNCTUATION */
         }
 
         /* Critical: Prevent global svg stroke/fill from altering text rendering */
@@ -1452,8 +1453,9 @@
                 const puncFontSize = Math.round(46 * puncScaleFactor);
                 const safePunc = squeezedPunc === '&' ? '&amp;' : (squeezedPunc === '<' ? '&lt;' : (squeezedPunc === '>' ? '&gt;' : squeezedPunc));
                 
-                // Squeeze into the right edge/corner securely without overflowing
-                let px = 94; // Align near the right edge
+                // Squeeze securely into the right edge/margin without overlapping the main character
+                // Use text-anchor="start" so the left edge of the punctuation box starts exactly here
+                let px = 86; 
                 let py = 76; // Bottom right for commas/periods
                 
                 if (['”', '’', '》', '】', '」', '』', ')', '>', ']'].includes(squeezedPunc)) {
@@ -1462,8 +1464,8 @@
                     py = 56; // Middle right
                 }
                 
-                // Use text-anchor="end" to ensure it never gets clipped by the right border!
-                charSvg += `<text x="${px}" y="${py}" text-anchor="end" dominant-baseline="middle" font-size="${puncFontSize}" font-family="${fontFamily}" font-weight="normal" fill="${charColor}" style="stroke: none !important; fill: ${charColor} !important;">${safePunc}</text>`;
+                // Use text-anchor="start" to ensure the visible mark starts at px (86) and safely hangs outwards!
+                charSvg += `<text x="${px}" y="${py}" text-anchor="start" dominant-baseline="middle" font-size="${puncFontSize}" font-family="${fontFamily}" font-weight="normal" fill="${charColor}" style="stroke: none !important; fill: ${charColor} !important;">${safePunc}</text>`;
             }
 
             return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
