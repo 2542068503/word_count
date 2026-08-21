@@ -1437,13 +1437,33 @@
 
             let charSvg = '';
             const char = typeof cellData === 'object' && cellData !== null ? cellData.char : cellData;
+            const squeezedPunc = typeof cellData === 'object' && cellData !== null ? cellData.squeezedPunc : null;
             const isTitleChar = typeof cellData === 'object' && cellData !== null ? !!cellData.isTitle : false;
 
             if (char) {
                 const pos = getCharPositionAndScale(char, baseScale, isTitleChar);
                 const safeChar = char === '&' ? '&amp;' : (char === '<' ? '&lt;' : (char === '>' ? '&gt;' : char));
                 
-                charSvg = `<text x="${pos.x}" y="${pos.y}" text-anchor="middle" dominant-baseline="middle" font-size="${pos.fontSize}" font-family="${fontFamily}" font-weight="normal" fill="${charColor}" style="stroke: none !important; fill: ${charColor} !important;">${safeChar}</text>`;
+                charSvg += `<text x="${pos.x}" y="${pos.y}" text-anchor="middle" dominant-baseline="middle" font-size="${pos.fontSize}" font-family="${fontFamily}" font-weight="normal" fill="${charColor}" style="stroke: none !important; fill: ${charColor} !important;">${safeChar}</text>`;
+            }
+
+            if (squeezedPunc) {
+                const puncScaleFactor = baseScale / 0.68;
+                const puncFontSize = Math.round(46 * puncScaleFactor);
+                const safePunc = squeezedPunc === '&' ? '&amp;' : (squeezedPunc === '<' ? '&lt;' : (squeezedPunc === '>' ? '&gt;' : squeezedPunc));
+                
+                // Squeeze into the right edge/corner securely without overflowing
+                let px = 94; // Align near the right edge
+                let py = 76; // Bottom right for commas/periods
+                
+                if (['”', '’', '》', '】', '」', '』', ')', '>', ']'].includes(squeezedPunc)) {
+                    py = 35; // Top right
+                } else if (['！', '？', '!', '?'].includes(squeezedPunc)) {
+                    py = 56; // Middle right
+                }
+                
+                // Use text-anchor="end" to ensure it never gets clipped by the right border!
+                charSvg += `<text x="${px}" y="${py}" text-anchor="end" dominant-baseline="middle" font-size="${puncFontSize}" font-family="${fontFamily}" font-weight="normal" fill="${charColor}" style="stroke: none !important; fill: ${charColor} !important;">${safePunc}</text>`;
             }
 
             return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -1529,17 +1549,16 @@
                             colIdx = 0;
                         }
 
-                        // Avoid Line-Start Punctuation (避头法则):
+                        // Avoid Line-Start Punctuation (避头法则 - 挤压/悬挂排版):
                         if (colIdx === 0 && avoidHeadPunc && forbiddenStartPuncs.includes(char) && gridRows.length > 0) {
                             const prevRow = gridRows[gridRows.length - 1];
                             const prevItem = prevRow[cols - 1];
                             const prevChar = typeof prevItem === 'object' && prevItem !== null ? prevItem.char : prevItem;
                             if (prevChar && prevChar.trim()) {
-                                prevRow[cols - 1] = ''; // clear last cell of previous row
-                                currentRow[0] = prevChar; // move to first cell of new line
-                                currentRow[1] = char;     // place punctuation in second cell
-                                colIdx = 2;
-                                continue;
+                                // Squeeze punctuation into the same cell as the previous character
+                                const isTitle = typeof prevItem === 'object' && prevItem !== null ? !!prevItem.isTitle : false;
+                                prevRow[cols - 1] = { char: prevChar, squeezedPunc: char, isTitle: isTitle };
+                                continue; // Skip advancing colIdx, the next character will correctly start at the new row's colIdx 0
                             }
                         }
 
