@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>硬笔书法字帖打印 · A4自定义排版 (Apple Design)</title>
+    <meta name="description" content="基于 Apple Design 语言的高性能在线硬笔书法字帖生成与 A4 打印工具，支持米字格、田字格、回宫格、方格自定义排版，支持古诗词范文一键加载、描红临摹与直接打印导出 PDF。">
+    <meta name="theme-color" content="#f5f5f7" id="theme-meta-color">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <style>
+        :root {
+            /* Apple Color Palette - Light Mode */
+            --bg-base: #f5f5f7;
+            --surface-bg: #ffffff;
+            --surface-solid: #ffffff;
+            --surface-border: rgba(0, 0, 0, 0.08);
+            --surface-border-hover: rgba(0, 0, 0, 0.16);
+            --surface-highlight: #f0f0f2;
+            
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --text-tertiary: #a1a1a6;
+            
+            --apple-blue: #0071e3;
+            --apple-blue-hover: #0077ed;
+            --apple-blue-light: rgba(0, 113, 227, 0.1);
+            --apple-green: #34c759;
+            --apple-green-light: rgba(52, 199, 89, 0.12);
+            --apple-orange: #ff9500;
+            --apple-orange-light: rgba(255, 149, 0, 0.12);
+            --apple-purple: #af52de;
+            --apple-purple-light: rgba(175, 82, 222, 0.12);
+            --apple-red: #ff3b30;
+            
+            --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+            --shadow-card-hover: 0 8px 28px -2px rgba(0, 0, 0, 0.08), 0 4px 10px -1px rgba(0, 0, 0, 0.04);
+            --shadow-paper: 0 12px 36px -4px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-float: 0 16px 36px -6px rgba(0, 0, 0, 0.12);
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-pill: 9999px;
+            
+            --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+            /* Default Grid Colors */
+            --grid-line-color: #d32f2f;
+            --grid-dash-color: #ef5350;
+            --grid-font-color: rgba(0, 0, 0, 0.28);
+        }
+
+        [data-theme="dark"] {
+            --bg-base: #000000;
+            --surface-bg: #1c1c1e;
+            --surface-solid: #2c2c2e;
+            --surface-border: rgba(255, 255, 255, 0.1);
+            --surface-border-hover: rgba(255, 255, 255, 0.2);
+            --surface-highlight: rgba(255, 255, 255, 0.08);
+            
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --text-tertiary: #6e6e73;
+            
+            --apple-blue: #0a84ff;
+            --apple-blue-hover: #409cff;
+            --apple-blue-light: rgba(10, 132, 255, 0.18);
+            --apple-green: #30d158;
+            --apple-green-light: rgba(48, 209, 88, 0.18);
+            --apple-orange: #ff9f0a;
+            --apple-orange-light: rgba(255, 159, 10, 0.18);
+            --apple-purple: #bf5af2;
+            --apple-purple-light: rgba(191, 90, 242, 0.18);
+            --apple-red: #ff453a;
+            
+            --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+            --shadow-card-hover: 0 8px 28px -2px rgba(0, 0, 0, 0.6);
+            --shadow-paper: 0 16px 48px -4px rgba(0, 0, 0, 0.8);
+            --shadow-float: 0 16px 40px -6px rgba(0, 0, 0, 0.75);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            letter-spacing: -0.011em;
+            transition: background-color 0.25s ease, color 0.25s ease;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translate3d(-50%, 0, 0);
+            width: 800px;
+            height: 320px;
+            background: radial-gradient(circle, var(--apple-blue-light) 0%, rgba(0,0,0,0) 70%);
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 0;
+            will-change: transform;
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 16px;
+            z-index: 100;
+            width: calc(100% - 32px);
+            max-width: 1360px;
+            margin: 16px auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-pill);
+            box-shadow: var(--shadow-card);
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        [data-theme="dark"] header {
+            background: rgba(28, 28, 30, 0.85);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 1.05rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 113, 227, 0.25);
+            display: block;
+            flex-shrink: 0;
+            transition: transform 0.2s var(--spring-ease);
+        }
+
+        .brand:hover .brand-icon {
+            transform: scale(1.05);
+        }
+
+        .brand:active .brand-icon {
+            transform: scale(0.95);
+        }
+
+        /* Apple Pull-Down Menu */
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 34px;
+            padding: 0 14px;
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            outline: none;
+            transition: transform 0.15s var(--spring-ease), border-color 0.15s ease;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .dropdown-btn:hover {
+            border-color: var(--surface-border-hover);
+            transform: translateY(-1px);
+        }
+
+        .dropdown-btn .chevron-icon {
+            transition: transform 0.25s var(--spring-ease);
+        }
+
+        .dropdown-container.open .dropdown-btn .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .apple-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px) scale(0.96);
+            transform-origin: top left;
+            transition: opacity 0.2s ease, transform 0.2s var(--spring-ease), visibility 0.2s;
+            pointer-events: none;
+        }
+
+        [data-theme="dark"] .apple-dropdown-menu {
+            background: rgba(28, 28, 30, 0.9);
+            box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.7);
+        }
+
+        .dropdown-container.open .apple-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: background-color 0.15s ease, transform 0.15s var(--spring-ease);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--surface-highlight);
+            transform: translateX(2px);
+        }
+
+        .dropdown-item.active {
+            background-color: var(--apple-blue-light);
+        }
+
+        .dropdown-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dropdown-item-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .dropdown-item-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .current-badge {
+            font-size: 0.68rem;
+            padding: 1px 6px;
+            background: var(--apple-blue);
+            color: #ffffff;
+            border-radius: 999px;
+            font-weight: 500;
+        }
+
+        .dropdown-item-desc {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pill-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 34px;
+            padding: 0 14px;
+            font-size: 0.86rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            outline: none;
+            transition: transform 0.15s var(--spring-ease), border-color 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .pill-btn.primary {
+            background: var(--apple-blue);
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+        }
+
+        .pill-btn.primary:hover {
+            background: var(--apple-blue-hover);
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.35);
+        }
+
+        .pill-btn:hover {
+            border-color: var(--surface-border-hover);
+            transform: translateY(-1px);
+        }
+
+        .pill-btn:active {
+            transform: scale(0.96);
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-pill);
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: transform 0.15s var(--spring-ease), border-color 0.15s ease;
+        }
+
+        .icon-btn:hover {
+            border-color: var(--surface-border-hover);
+            transform: translateY(-1px);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.94);
+        }
+
+        /* Workspace Grid */
+        main {
+            position: relative;
+            z-index: 1;
+            width: calc(100% - 32px);
+            max-width: 1360px;
+            margin: 0 auto 40px;
+            flex: 1;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 1080px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glass Card Container */
+        .glass-card {
+            background: var(--surface-bg);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-card);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card-section-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .input-text, .textarea-custom {
+            width: 100%;
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-md);
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+
+        [data-theme="dark"] .input-text, [data-theme="dark"] .textarea-custom {
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .input-text:focus, .textarea-custom:focus {
+            border-color: var(--apple-blue);
+            box-shadow: 0 0 0 3px var(--apple-blue-light);
+            background: var(--surface-solid);
+        }
+
+        .textarea-custom {
+            min-height: 120px;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        /* Preset Pills */
+        .preset-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .preset-chip {
+            font-size: 0.76rem;
+            padding: 4px 10px;
+            border-radius: var(--radius-pill);
+            background: var(--surface-highlight);
+            border: 1px solid var(--surface-border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s var(--spring-ease);
+            user-select: none;
+        }
+
+        .preset-chip:hover {
+            color: var(--text-primary);
+            border-color: var(--surface-border-hover);
+        }
+
+        .preset-chip.active {
+            background: var(--apple-blue-light);
+            border-color: var(--apple-blue);
+            color: var(--apple-blue);
+            font-weight: 600;
+        }
+
+        /* Apple Segmented Controls */
+        .segmented-control {
+            display: flex;
+            background: var(--surface-highlight);
+            padding: 3px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--surface-border);
+            gap: 2px;
+        }
+
+        .segment-btn {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: calc(var(--radius-md) - 3px);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+            user-select: none;
+        }
+
+        .segment-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .segment-btn.active {
+            background: var(--surface-solid);
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Color Picker Pills */
+        .color-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .color-choice {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--surface-border);
+            background: var(--surface-solid);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s var(--spring-ease);
+            user-select: none;
+        }
+
+        .color-choice:hover {
+            border-color: var(--surface-border-hover);
+        }
+
+        .color-choice.active {
+            border-color: var(--apple-blue);
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: 0 0 0 2px var(--apple-blue-light);
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Toggles */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .apple-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .apple-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--surface-border-hover);
+            transition: .25s var(--spring-ease);
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .25s var(--spring-ease);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: var(--apple-green);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Right Canvas Area */
+        .preview-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .preview-header-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+        }
+
+        .preview-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .page-badge {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: var(--surface-highlight);
+            padding: 2px 10px;
+            border-radius: var(--radius-pill);
+        }
+
+        /* A4 Page Container (Screen Preview) */
+        .a4-page {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 210 / 297;
+            background: #ffffff;
+            color: #111111;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-paper);
+            padding: 36px 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            margin-bottom: 24px;
+            transition: transform 0.2s ease;
+        }
+
+        .a4-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--grid-line-color);
+            padding-bottom: 12px;
+        }
+
+        .a4-main-title {
+            font-family: "STKaiti", "楷体", "FZKai-Z03S", "PingFang SC", serif;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #111111;
+            letter-spacing: 0.15em;
+            margin-bottom: 4px;
+        }
+
+        .a4-subtitle {
+            font-family: "STKaiti", "楷体", "PingFang SC", serif;
+            font-size: 0.95rem;
+            color: #555555;
+            letter-spacing: 0.1em;
+        }
+
+        /* Calligraphy Grid Board */
+        .grid-board {
+            flex: 1;
+            display: grid;
+            width: 100%;
+            border: 1.5px solid var(--grid-line-color);
+            background: #ffffff;
+            box-sizing: border-box;
+        }
+
+        .grid-cell {
+            position: relative;
+            box-sizing: border-box;
+            border-right: 1px solid var(--grid-line-color);
+            border-bottom: 1px solid var(--grid-line-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            aspect-ratio: 1 / 1;
+        }
+
+        .grid-svg-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .grid-char {
+            position: relative;
+            z-index: 2;
+            font-family: "STKaiti", "楷体", "FZKai-Z03S", serif;
+            font-size: 72%;
+            line-height: 1;
+            color: var(--grid-font-color);
+            user-select: none;
+            font-weight: 500;
+        }
+
+        .a4-footer {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: #777777;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 8px;
+        }
+
+        /* Toast Notification */
+        .toast-pill {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translate3d(-50%, 100px, 0);
+            opacity: 0;
+            background: var(--text-primary);
+            color: var(--bg-base);
+            padding: 10px 20px;
+            border-radius: var(--radius-pill);
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow-float);
+            z-index: 1000;
+            pointer-events: none;
+            transition: transform 0.3s var(--spring-ease), opacity 0.3s ease;
+        }
+
+        .toast-pill.show {
+            transform: translate3d(-50%, 0, 0);
+            opacity: 1;
+        }
+
+        /* Footer */
+        footer {
+            width: 100%;
+            max-width: 1360px;
+            margin: 0 auto 24px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+
+        /* ===================================================
+           A4 High-Precision Print Engine Styles (@media print)
+           =================================================== */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm 10mm;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .ambient-glow,
+            header,
+            .settings-panel,
+            .preview-header-bar,
+            .toast-pill,
+            footer {
+                display: none !important;
+            }
+
+            main {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .preview-pane {
+                width: 100% !important;
+            }
+
+            .a4-page {
+                width: 100% !important;
+                max-width: 100% !important;
+                aspect-ratio: auto !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                padding: 10mm 12mm !important;
+                margin: 0 !important;
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+
+            .grid-board {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .grid-cell {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .grid-svg-bg {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        svg {
+            display: inline-block;
+            vertical-align: middle;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+
+    <!-- Apple Dynamic Header -->
+    <header>
+        <div class="header-left">
+            <a href="index.html" class="brand" title="返回首页">
+                <img src="favicon.svg" alt="WordCount Logo" class="brand-icon" width="32" height="32">
+                <span>WordCount</span>
+            </a>
+
+            <!-- Apple Pull-Down Menu -->
+            <div class="dropdown-container" id="tools-dropdown">
+                <button class="pill-btn dropdown-btn" id="btn-dropdown" aria-expanded="false" aria-haspopup="true" title="选择功能工具">
+                    <svg width="14" height="14" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+                    <span>硬笔字帖打印 ▾</span>
+                    <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="apple-dropdown-menu" id="dropdown-menu">
+                    <a href="index.html" class="dropdown-item">
+                        <div class="dropdown-item-icon" style="background: var(--apple-blue-light); color: var(--apple-blue);">
+                            <svg width="16" height="16" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        </div>
+                        <div class="dropdown-item-content">
+                            <div class="dropdown-item-title">在线字数统计</div>
+                            <div class="dropdown-item-desc">实时多维字数、词频与阅读时长</div>
+                        </div>
+                    </a>
+                    <a href="zitie.html" class="dropdown-item active">
+                        <div class="dropdown-item-icon" style="background: var(--apple-orange-light); color: var(--apple-orange);">
+                            <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        </div>
+                        <div class="dropdown-item-content">
+                            <div class="dropdown-item-title">硬笔书法字帖打印 <span class="current-badge">当前</span></div>
+                            <div class="dropdown-item-desc">米字格/田字格自定义排版与 A4 打印</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button class="pill-btn primary" id="btn-top-print">
+                <svg width="14" height="14" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>立即打印 A4</span>
+            </button>
+            <button class="icon-btn" id="btn-theme-toggle" title="切换浅色/深色主题" aria-label="Toggle Theme">
+                <svg width="16" height="16" viewBox="0 0 24 24" id="theme-icon">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main>
+        <!-- Left: Configuration Studio -->
+        <section class="glass-card settings-panel">
+            <div>
+                <div class="card-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    <span>字帖内容设置</span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label class="form-label" for="input-title">字帖主标题</label>
+                            <input type="text" id="input-title" class="input-text" value="《沁园春·长沙》" placeholder="例如：《沁园春·长沙》">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="input-author">作者/朝代</label>
+                            <input type="text" id="input-author" class="input-text" value="现代 · 毛泽东" placeholder="例如：现代 · 毛泽东">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="input-content">正文内容 (自动按字入格)</label>
+                        <textarea id="input-content" class="textarea-custom" placeholder="输入要练习的诗词或文字..."></textarea>
+                    </div>
+
+                    <!-- Preset Samples -->
+                    <div class="form-group">
+                        <label class="form-label">经典古诗文快速载入</label>
+                        <div class="preset-container">
+                            <button class="preset-chip active" data-preset="qinyuanchun">🍁 沁园春·长沙</button>
+                            <button class="preset-chip" data-preset="jiangjinjiu">🍷 将进酒</button>
+                            <button class="preset-chip" data-preset="chibi">🌊 念奴娇·赤壁怀古</button>
+                            <button class="preset-chip" data-preset="yueyanglou">🏯 岳阳楼记</button>
+                            <button class="preset-chip" data-preset="ailianshuo">🌸 爱莲说</button>
+                            <button class="preset-chip" data-preset="duange">🌙 短歌行</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid & Layout Settings -->
+            <div>
+                <div class="card-section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+                    <span>格线与版式规范</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <!-- Grid Style -->
+                    <div class="form-group">
+                        <label class="form-label">格线样式</label>
+                        <div class="segmented-control" id="ctrl-grid-type">
+                            <button class="segment-btn active" data-value="mizige">米字格</button>
+                            <button class="segment-btn" data-value="tianzige">田字格</button>
+                            <button class="segment-btn" data-value="huizige">回宫格</button>
+                            <button class="segment-btn" data-value="fangge">纯方格</button>
+                        </div>
+                    </div>
+
+                    <!-- Color Style -->
+                    <div class="form-group">
+                        <label class="form-label">格线色彩</label>
+                        <div class="color-group" id="ctrl-grid-color">
+                            <button class="color-choice active" data-color="#d32f2f" data-dash="#ef5350">
+                                <span class="color-dot" style="background: #d32f2f;"></span>
+                                <span>朱砂红</span>
+                            </button>
+                            <button class="color-choice" data-color="#3f3f46" data-dash="#a1a1aa">
+                                <span class="color-dot" style="background: #3f3f46;"></span>
+                                <span>省墨灰</span>
+                            </button>
+                            <button class="color-choice" data-color="#15803d" data-dash="#4ade80">
+                                <span class="color-dot" style="background: #15803d;"></span>
+                                <span>竹青绿</span>
+                            </button>
+                            <button class="color-choice" data-color="#0071e3" data-dash="#60a5fa">
+                                <span class="color-dot" style="background: #0071e3;"></span>
+                                <span>海青蓝</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Practice Mode -->
+                    <div class="form-group">
+                        <label class="form-label">临摹练习模式</label>
+                        <div class="segmented-control" id="ctrl-practice-mode">
+                            <button class="segment-btn active" data-value="trace">✍️ 描红临摹</button>
+                            <button class="segment-btn" data-value="alternate">📖 隔行临摹</button>
+                            <button class="segment-btn" data-value="blank">📜 空白字帖</button>
+                        </div>
+                    </div>
+
+                    <!-- Layout Scale -->
+                    <div class="form-group">
+                        <label class="form-label">单页规格 (列数 × 行数)</label>
+                        <div class="segmented-control" id="ctrl-layout-size">
+                            <button class="segment-btn" data-cols="10" data-rows="12">10×12 (大字)</button>
+                            <button class="segment-btn active" data-cols="12" data-rows="14">12×14 (标准)</button>
+                            <button class="segment-btn" data-cols="14" data-rows="16">14×16 (小字)</button>
+                        </div>
+                    </div>
+
+                    <!-- Switch Options -->
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
+                        <div class="toggle-row">
+                            <span>标点符号独立占格</span>
+                            <label class="apple-switch">
+                                <input type="checkbox" id="toggle-punctuation" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-row">
+                            <span>显示顶部文题与作者</span>
+                            <label class="apple-switch">
+                                <input type="checkbox" id="toggle-header" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-row">
+                            <span>显示页脚落款信息</span>
+                            <label class="apple-switch">
+                                <input type="checkbox" id="toggle-footer" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid var(--surface-border);">
+                <button class="pill-btn primary" id="btn-print-main" style="flex: 1.4; justify-content: center; height: 40px; font-size: 0.92rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    <span>打印 / 导出 A4 PDF</span>
+                </button>
+                <button class="pill-btn" id="btn-reset" style="flex: 1; justify-content: center; height: 40px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    <span>重置</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Right: Live A4 Preview Canvas -->
+        <section class="preview-pane">
+            <div class="preview-header-bar">
+                <div class="preview-title">A4 纸张排版实时预览</div>
+                <div class="page-badge" id="page-count-badge">共 1 页</div>
+            </div>
+
+            <!-- A4 Pages Container -->
+            <div id="a4-pages-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <!-- Dynamically generated A4 pages -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast-pill" id="toast">
+        <svg width="16" height="16" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span id="toast-message">操作成功</span>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>硬笔书法字帖生成器 · 标准 A4 矢量排版 · 保护视力与练习规范 · Apple Design</p>
+    </footer>
+
+    <!-- Script Logic -->
+    <script>
+        // Preset Poetry
+        const POETRY_PRESETS = {
+            qinyuanchun: {
+                title: "《沁园春·长沙》",
+                author: "现代 · 毛泽东",
+                content: `独立寒秋，湘江北去，橘子洲头。
+看万山红遍，层林尽染；漫江碧透，百舸争流。
+鹰击长空，鱼翔浅底，万类霜天竞自由。
+怅寥廓，问苍茫大地，谁主沉浮？
+携来百侣曾游，忆往昔峥嵘岁月稠。
+恰同学少年，风华正茂；书生意气，挥斥方遒。
+指点江山，激扬文字，粪土当年万户侯。
+曾记否，到中流击水，浪遏飞舟？`
+            },
+            jiangjinjiu: {
+                title: "《将进酒》",
+                author: "唐 · 李白",
+                content: `君不见黄河之水天上来，奔流到海不复回。
+君不见高堂明镜悲白发，朝如青丝暮成雪。
+人生得意须尽欢，莫使金樽空对月。
+天生我材必有用，千金散尽还复来。
+烹羊宰牛且为乐，会须一饮三百杯。
+岑夫子，丹丘生，将进酒，杯莫停。`
+            },
+            chibi: {
+                title: "《念奴娇·赤壁怀古》",
+                author: "宋 · 苏轼",
+                content: `大江东去，浪淘尽，千古风流人物。
+故垒西边，人道是，三国周郎赤壁。
+乱石穿空，惊涛拍岸，卷起千堆雪。
+江山如画，一时多少豪杰。
+遥想公瑾当年，小乔初嫁了，雄姿英发。
+羽扇纶巾，谈笑间，樯橹灰飞烟灭。`
+            },
+            yueyanglou: {
+                title: "《岳阳楼记》",
+                author: "宋 · 范仲淹",
+                content: `庆历四年春，滕子京谪守巴陵郡。
+越明年，政通人和，百废具兴。
+乃重修岳阳楼，增其旧制，刻唐贤今人诗赋于其上。
+属予作文以记之。
+予观夫巴陵胜状，在洞庭一湖。
+衔远山，吞长江，浩浩汤汤，横无际涯。
+朝晖夕阴，气象万千。此则岳阳楼之大观也。`
+            },
+            ailianshuo: {
+                title: "《爱莲说》",
+                author: "宋 · 周敦颐",
+                content: `水陆草木之花，可爱者甚蕃。
+晋陶渊明独爱菊。自李唐来，世人甚爱牡丹。
+予独爱莲之出淤泥而不染，濯清涟而不妖，中通外直，不蔓不枝，香远益清，亭亭净植，可远观而不可亵玩焉。`
+            },
+            duange: {
+                title: "《短歌行》",
+                author: "东汉 · 曹操",
+                content: `对酒当歌，人生几何！
+譬如朝露，去日苦多。
+慨当以慷，忧思难忘。
+何以解忧？唯有杜康。
+青青子衿，悠悠我心。
+但为君故，沉吟至今。
+呦呦鹿鸣，食野之苹。
+我有嘉宾，鼓瑟吹笙。`
+            }
+        };
+
+        // State variables
+        let currentGridType = 'mizige';
+        let currentGridColor = '#d32f2f';
+        let currentDashColor = '#ef5350';
+        let currentPracticeMode = 'trace';
+        let currentCols = 12;
+        let currentRows = 14;
+
+        // DOM elements
+        const inputTitle = document.getElementById('input-title');
+        const inputAuthor = document.getElementById('input-author');
+        const inputContent = document.getElementById('input-content');
+        const togglePunctuation = document.getElementById('toggle-punctuation');
+        const toggleHeader = document.getElementById('toggle-header');
+        const toggleFooter = document.getElementById('toggle-footer');
+        const a4PagesContainer = document.getElementById('a4-pages-container');
+        const pageCountBadge = document.getElementById('page-count-badge');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-message');
+
+        // Toast Helper
+        let toastTimer = null;
+        function showToast(msg) {
+            toastMsg.textContent = msg;
+            toast.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+        }
+
+        // SVG Grid Cell Pattern Generator
+        function getCellSvg(type, lineColor, dashColor) {
+            if (type === 'fangge') {
+                return '';
+            }
+            if (type === 'tianzige') {
+                return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <line x1="50" y1="0" x2="50" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                    <line x1="0" y1="50" x2="100" y2="50" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                </svg>`;
+            }
+            if (type === 'huizige') {
+                return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <rect x="22" y="22" width="56" height="56" fill="none" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                </svg>`;
+            }
+            // default: mizige (米字格)
+            return `<svg class="grid-svg-bg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="50" y1="0" x2="50" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                <line x1="0" y1="50" x2="100" y2="50" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                <line x1="0" y1="0" x2="100" y2="100" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+                <line x1="0" y1="100" x2="100" y2="0" stroke="${dashColor}" stroke-width="1" stroke-dasharray="3,3" />
+            </svg>`;
+        }
+
+        // Character Filtering and Segmentation
+        function parseCharacters(text, allowPunctuation) {
+            if (!text) return [];
+            const result = [];
+            // Remove carriage returns, keep lines
+            const lines = text.split(/\r?\n/);
+
+            for (const line of lines) {
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (/\s/.test(char)) continue; // ignore pure whitespaces
+                    if (!allowPunctuation && /[，。！？；：“”‘’（）《》、,.!?;:'"()]/g.test(char)) {
+                        continue;
+                    }
+                    result.push(char);
+                }
+            }
+            return result;
+        }
+
+        // Main Render Engine
+        function renderCopybook() {
+            // Set CSS variables for colors
+            document.documentElement.style.setProperty('--grid-line-color', currentGridColor);
+            document.documentElement.style.setProperty('--grid-dash-color', currentDashColor);
+
+            const titleText = inputTitle.value.trim();
+            const authorText = inputAuthor.value.trim();
+            const rawContent = inputContent.value;
+            const allowPunc = togglePunctuation.checked;
+            const showHeader = toggleHeader.checked;
+            const showFooter = toggleFooter.checked;
+
+            const chars = parseCharacters(rawContent, allowPunc);
+            const capacityPerPage = currentCols * currentRows;
+
+            // Compute lines / pages needed
+            let pagesChars = [];
+            if (currentPracticeMode === 'blank') {
+                pagesChars = [[]]; // 1 blank page
+            } else if (currentPracticeMode === 'alternate') {
+                // Alternating rows: 1 row of chars, 1 row of blank
+                const effectiveRowCapacity = currentCols;
+                const charsPerAlternatingPage = Math.floor(currentRows / 2) * currentCols;
+                
+                let curIndex = 0;
+                while (curIndex < chars.length || pagesChars.length === 0) {
+                    const pageSlice = chars.slice(curIndex, curIndex + charsPerAlternatingPage);
+                    pagesChars.push(pageSlice);
+                    curIndex += charsPerAlternatingPage;
+                    if (curIndex >= chars.length && pagesChars.length > 0) break;
+                }
+            } else {
+                // Normal tracing mode
+                let curIndex = 0;
+                while (curIndex < chars.length || pagesChars.length === 0) {
+                    const pageSlice = chars.slice(curIndex, curIndex + capacityPerPage);
+                    pagesChars.push(pageSlice);
+                    curIndex += capacityPerPage;
+                    if (curIndex >= chars.length && pagesChars.length > 0) break;
+                }
+            }
+
+            pageCountBadge.textContent = `共 ${pagesChars.length} 页`;
+            a4PagesContainer.innerHTML = '';
+
+            const cellSvg = getCellSvg(currentGridType, currentGridColor, currentDashColor);
+
+            // Render each A4 Page
+            pagesChars.forEach((pageContent, pageIdx) => {
+                const pageEl = document.createElement('div');
+                pageEl.className = 'a4-page';
+
+                // 1. Header
+                if (showHeader && (titleText || authorText)) {
+                    const headerEl = document.createElement('div');
+                    headerEl.className = 'a4-header';
+                    headerEl.innerHTML = `
+                        <div class="a4-main-title">${titleText || '硬笔书法字帖'}</div>
+                        <div class="a4-subtitle">${authorText || '练习范本'}</div>
+                    `;
+                    pageEl.appendChild(headerEl);
+                }
+
+                // 2. Grid Board
+                const gridBoard = document.createElement('div');
+                gridBoard.className = 'grid-board';
+                gridBoard.style.gridTemplateColumns = `repeat(${currentCols}, 1fr)`;
+                gridBoard.style.gridTemplateRows = `repeat(${currentRows}, 1fr)`;
+
+                // Fill Grid Cells
+                if (currentPracticeMode === 'alternate') {
+                    let charPointer = 0;
+                    for (let r = 0; r < currentRows; r++) {
+                        const isTextRow = (r % 2 === 0);
+                        for (let c = 0; c < currentCols; c++) {
+                            const cell = document.createElement('div');
+                            cell.className = 'grid-cell';
+                            cell.innerHTML = cellSvg;
+
+                            if (isTextRow && charPointer < pageContent.length) {
+                                const charSpan = document.createElement('span');
+                                charSpan.className = 'grid-char';
+                                charSpan.textContent = pageContent[charPointer++];
+                                cell.appendChild(charSpan);
+                            }
+                            gridBoard.appendChild(cell);
+                        }
+                    }
+                } else if (currentPracticeMode === 'blank') {
+                    for (let i = 0; i < capacityPerPage; i++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.innerHTML = cellSvg;
+                        gridBoard.appendChild(cell);
+                    }
+                } else {
+                    for (let i = 0; i < capacityPerPage; i++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.innerHTML = cellSvg;
+
+                        if (i < pageContent.length) {
+                            const charSpan = document.createElement('span');
+                            charSpan.className = 'grid-char';
+                            charSpan.textContent = pageContent[i];
+                            cell.appendChild(charSpan);
+                        }
+                        gridBoard.appendChild(cell);
+                    }
+                }
+
+                pageEl.appendChild(gridBoard);
+
+                // 3. Footer
+                if (showFooter) {
+                    const footerEl = document.createElement('div');
+                    footerEl.className = 'a4-footer';
+                    footerEl.innerHTML = `
+                        <span>硬笔书法习字帖 · 标准 A4 临摹版</span>
+                        <span>第 ${pageIdx + 1} 页 / 共 ${pagesChars.length} 页</span>
+                    `;
+                    pageEl.appendChild(footerEl);
+                }
+
+                a4PagesContainer.appendChild(pageEl);
+            });
+        }
+
+        // Preset loading
+        function loadPreset(key) {
+            const data = POETRY_PRESETS[key];
+            if (!data) return;
+            inputTitle.value = data.title;
+            inputAuthor.value = data.author;
+            inputContent.value = data.content;
+            renderCopybook();
+            showToast(`已载入 ${data.title}`);
+        }
+
+        document.querySelectorAll('.preset-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.preset-chip').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                loadPreset(btn.getAttribute('data-preset'));
+            });
+        });
+
+        // Grid Type Controller
+        document.querySelectorAll('#ctrl-grid-type .segment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#ctrl-grid-type .segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentGridType = btn.getAttribute('data-value');
+                renderCopybook();
+            });
+        });
+
+        // Grid Color Controller
+        document.querySelectorAll('#ctrl-grid-color .color-choice').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#ctrl-grid-color .color-choice').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentGridColor = btn.getAttribute('data-color');
+                currentDashColor = btn.getAttribute('data-dash');
+                renderCopybook();
+            });
+        });
+
+        // Practice Mode Controller
+        document.querySelectorAll('#ctrl-practice-mode .segment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#ctrl-practice-mode .segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPracticeMode = btn.getAttribute('data-value');
+                renderCopybook();
+            });
+        });
+
+        // Layout Size Controller
+        document.querySelectorAll('#ctrl-layout-size .segment-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#ctrl-layout-size .segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCols = parseInt(btn.getAttribute('data-cols'), 10);
+                currentRows = parseInt(btn.getAttribute('data-rows'), 10);
+                renderCopybook();
+            });
+        });
+
+        // Input Listeners
+        [inputTitle, inputAuthor, inputContent].forEach(input => {
+            input.addEventListener('input', renderCopybook);
+        });
+
+        [togglePunctuation, toggleHeader, toggleFooter].forEach(toggle => {
+            toggle.addEventListener('change', renderCopybook);
+        });
+
+        // Print Triggers
+        const triggerPrint = () => {
+            window.print();
+        };
+
+        document.getElementById('btn-top-print').addEventListener('click', triggerPrint);
+        document.getElementById('btn-print-main').addEventListener('click', triggerPrint);
+
+        // Reset Button
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            loadPreset('qinyuanchun');
+            showToast('已重置为默认字帖');
+        });
+
+        // Dropdown Menu Interaction
+        const toolsDropdown = document.getElementById('tools-dropdown');
+        const btnDropdown = document.getElementById('btn-dropdown');
+
+        btnDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = toolsDropdown.classList.toggle('open');
+            btnDropdown.setAttribute('aria-expanded', isOpen);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!toolsDropdown.contains(e.target)) {
+                toolsDropdown.classList.remove('open');
+                btnDropdown.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && toolsDropdown.classList.contains('open')) {
+                toolsDropdown.classList.remove('open');
+                btnDropdown.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Theme Toggle
+        const btnThemeToggle = document.getElementById('btn-theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        function updateTheme(isDark) {
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-meta-color').setAttribute('content', isDark ? '#000000' : '#f5f5f7');
+            localStorage.setItem('theme-preference', isDark ? 'dark' : 'light');
+            
+            if (isDark) {
+                themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+            } else {
+                themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`;
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme-preference');
+        const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialDark = savedTheme ? savedTheme === 'dark' : systemPrefersDark;
+        updateTheme(initialDark);
+
+        btnThemeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            updateTheme(currentTheme !== 'dark');
+        });
+
+        // Initialize with default preset
+        loadPreset('qinyuanchun');
+    </script>
+</body>
+</html>

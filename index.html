@@ -173,6 +173,126 @@
             transform: scale(0.95);
         }
 
+        /* Apple Pull-Down Menu Styles */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-btn {
+            gap: 6px;
+            font-size: 0.84rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .dropdown-btn .chevron-icon {
+            transition: transform 0.25s var(--spring-ease);
+        }
+
+        .dropdown-container.open .dropdown-btn .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .apple-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px) scale(0.96);
+            transform-origin: top left;
+            transition: opacity 0.2s ease, transform 0.2s var(--spring-ease), visibility 0.2s;
+            pointer-events: none;
+        }
+
+        [data-theme="dark"] .apple-dropdown-menu {
+            background: rgba(28, 28, 30, 0.9);
+            box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.7);
+        }
+
+        .dropdown-container.open .apple-dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: background-color 0.15s ease, transform 0.15s var(--spring-ease);
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--surface-highlight);
+            transform: translateX(2px);
+        }
+
+        .dropdown-item.active {
+            background-color: var(--apple-blue-light);
+        }
+
+        .dropdown-item-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dropdown-item-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .dropdown-item-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .current-badge {
+            font-size: 0.68rem;
+            padding: 1px 6px;
+            background: var(--apple-blue);
+            color: #ffffff;
+            border-radius: 999px;
+            font-weight: 500;
+        }
+
+        .dropdown-item-desc {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+
         .header-actions {
             display: flex;
             align-items: center;
@@ -667,10 +787,41 @@
 
     <!-- Apple Dynamic Header -->
     <header>
-        <a href="javascript:void(0)" class="brand" id="brand-link" title="返回顶部">
-            <img src="favicon.svg" alt="WordCount Logo" class="brand-icon" width="32" height="32">
-            <span>WordCount</span>
-        </a>
+        <div class="header-left">
+            <a href="javascript:void(0)" class="brand" id="brand-link" title="返回顶部">
+                <img src="favicon.svg" alt="WordCount Logo" class="brand-icon" width="32" height="32">
+                <span>WordCount</span>
+            </a>
+
+            <!-- Apple Pull-Down Menu -->
+            <div class="dropdown-container" id="tools-dropdown">
+                <button class="pill-btn dropdown-btn" id="btn-dropdown" aria-expanded="false" aria-haspopup="true" title="选择功能工具">
+                    <svg width="14" height="14" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+                    <span>更多工具</span>
+                    <svg class="chevron-icon" width="12" height="12" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="apple-dropdown-menu" id="dropdown-menu">
+                    <a href="index.html" class="dropdown-item active">
+                        <div class="dropdown-item-icon" style="background: var(--apple-blue-light); color: var(--apple-blue);">
+                            <svg width="16" height="16" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        </div>
+                        <div class="dropdown-item-content">
+                            <div class="dropdown-item-title">在线字数统计 <span class="current-badge">当前</span></div>
+                            <div class="dropdown-item-desc">实时多维字数、词频与阅读时长</div>
+                        </div>
+                    </a>
+                    <a href="zitie.html" class="dropdown-item">
+                        <div class="dropdown-item-icon" style="background: var(--apple-orange-light); color: var(--apple-orange);">
+                            <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        </div>
+                        <div class="dropdown-item-content">
+                            <div class="dropdown-item-title">硬笔书法字帖打印</div>
+                            <div class="dropdown-item-desc">米字格/田字格自定义排版与 A4 打印</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <div class="header-actions">
             <button class="pill-btn" id="btn-sample">
@@ -1240,6 +1391,32 @@ Apple 的设计哲学在于消除复杂，让工具成为思考与创造的自�
         document.getElementById('brand-link').addEventListener('click', (e) => {
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Pull-Down Menu Interaction
+        const toolsDropdown = document.getElementById('tools-dropdown');
+        const btnDropdown = document.getElementById('btn-dropdown');
+
+        btnDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = toolsDropdown.classList.toggle('open');
+            btnDropdown.setAttribute('aria-expanded', isOpen);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!toolsDropdown.contains(e.target)) {
+                toolsDropdown.classList.remove('open');
+                btnDropdown.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close dropdown on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && toolsDropdown.classList.contains('open')) {
+                toolsDropdown.classList.remove('open');
+                btnDropdown.setAttribute('aria-expanded', 'false');
+            }
         });
 
         renderStatistics();
